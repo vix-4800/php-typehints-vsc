@@ -79,9 +79,9 @@ function extractReturnTypeFromHover(hover: vscode.Hover): string | null {
  * Normalize and clean return type string
  */
 function normalizeReturnType(type: string): string {
-    type = type.replace(/[{}()]/g, '').trim();
-    type = type.replace(/^\((.*)\)$/, '$1');
+    type = type.replace(/`/g, '');
     type = type.replace(/^\\+/, '');
+    type = type.trim();
 
     return type;
 }
