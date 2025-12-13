@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Engine, Node, Program, Call, New } from 'php-parser';
+import { Engine, Node, Program, Call, New, Function, Method, Closure } from 'php-parser';
 
 export interface ArgumentInfo {
     position: vscode.Position;
@@ -10,6 +10,13 @@ export interface ArgumentInfo {
 export interface FunctionCallInfo {
     position: vscode.Position;
     arguments: ArgumentInfo[];
+}
+
+export interface FunctionDeclarationInfo {
+    name: string;
+    namePosition: vscode.Position;
+    returnTypePosition: vscode.Position;
+    hasReturnType: boolean;
 }
 
 export function parseFunctionCalls(
@@ -230,5 +237,116 @@ function traverseNode(node: any, visitor: (node: Node) => void): void {
                 traverseNode(value, visitor);
             }
         }
+    }
+}
+
+export function parseFunctionDeclarations(
+    document: vscode.TextDocument,
+    range: vscode.Range
+): FunctionDeclarationInfo[] {
+    const declarations: FunctionDeclarationInfo[] = [];
+
+    try {
+        const text = document.getText();
+        const parser = new Engine({
+            parser: {
+                extractDoc: false,
+                php7: true,
+                php8: true,
+            },
+            ast: {
+                withPositions: true,
+            },
+        });
+
+        let ast: Program;
+        try {
+            ast = parser.parseCode(text, 'document.php');
+        } catch {
+            return declarations;
+        }
+
+        traverseNode(ast, (node: Node) => {
+            if (node.kind === 'function' || node.kind === 'method') {
+                const funcNode = node as Function | Method;
+                const declInfo = extractFunctionDeclarationInfo(funcNode, document, range);
+                if (declInfo) {
+                    declarations.push(declInfo);
+                }
+            }
+        });
+    } catch {
+        return declarations;
+    }
+
+    return declarations;
+}
+
+function extractFunctionDeclarationInfo(
+    node: Function | Method,
+    document: vscode.TextDocument,
+    range: vscode.Range
+): FunctionDeclarationInfo | null {
+    if (!node.loc || !node.name) {
+        return null;
+    }
+
+    const funcPosition = new vscode.Position(node.loc.start.line - 1, node.loc.start.column);
+    if (!range.contains(funcPosition)) {
+        return null;
+    }
+
+    const name = typeof node.name === 'string' ? node.name : node.name.name;
+    const hasReturnType = node.type !== null && node.type !== undefined;
+
+    const namePosition =
+        typeof node.name === 'object' && node.name.loc
+            ? new vscode.Position(node.name.loc.start.line - 1, node.name.loc.start.column)
+            : funcPosition;
+
+    const returnTypePosition = findReturnTypePosition(node, document);
+
+    return {
+        name,
+        namePosition,
+        returnTypePosition,
+        hasReturnType,
+    };
+}
+
+function findReturnTypePosition(
+    node: Function | Method,
+    document: vscode.TextDocument
+): vscode.Position {
+    if (!node.loc) {
+        return new vscode.Position(0, 0);
+    }
+
+    const startLine = node.loc.start.line - 1;
+    const startCol = node.loc.start.column;
+
+    const bodyStart = node.body?.loc?.start;
+    const endLine = bodyStart ? bodyStart.line - 1 : node.loc.end.line - 1;
+    const endCol = bodyStart ? bodyStart.column : node.loc.end.column;
+
+    const searchRange = new vscode.Range(
+        new vscode.Position(startLine, startCol),
+        new vscode.Position(endLine, endCol)
+    );
+    const searchText = document.getText(searchRange);
+
+    const parenIndex = searchText.lastIndexOf(')');
+    if (parenIndex === -1) {
+        return new vscode.Position(startLine, startCol);
+    }
+
+    const textBeforeParen = searchText.substring(0, parenIndex + 1);
+    const lines = textBeforeParen.split('\n');
+    const lineOffset = lines.length - 1;
+
+    if (lineOffset === 0) {
+        return new vscode.Position(startLine, startCol + parenIndex + 1);
+    } else {
+        return new vscode.Position(startLine + lineOffset, lines[lines.length - 1].length);
     }
 }

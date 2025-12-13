@@ -56,6 +56,16 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Show hints for built-in PHP functions"
+                },
+                "phpParameterHints.showParameterHints": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show parameter name hints for function calls"
+                },
+                "phpParameterHints.showReturnTypeHints": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show return type hints for function declarations"
                 }
             }
         }

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { parseFunctionCalls } from './parser.js';
+import { parseFunctionCalls, parseFunctionDeclarations } from './parser.js';
 import { getSignatureHelp } from './signatureHelper.js';
 
 export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
@@ -17,61 +17,169 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
         const hints: vscode.InlayHint[] = [];
 
         try {
-            const functionCalls = parseFunctionCalls(document, range);
+            if (config.get<boolean>('showParameterHints', true)) {
+                const parameterHints = await this.getParameterHints(document, range, token, config);
+                hints.push(...parameterHints);
+            }
 
-            for (const call of functionCalls) {
-                if (token.isCancellationRequested) {
-                    break;
-                }
-
-                const signatureHelp = await getSignatureHelp(document, call.position);
-
-                if (!signatureHelp || signatureHelp.signatures.length === 0) {
-                    continue;
-                }
-
-                const signature = signatureHelp.signatures[signatureHelp.activeSignature || 0];
-
-                if (!signature.parameters || signature.parameters.length === 0) {
-                    continue;
-                }
-
-                for (let i = 0; i < call.arguments.length; i++) {
-                    const arg = call.arguments[i];
-
-                    if (arg.isNamed) {
-                        continue;
-                    }
-
-                    const parameter = signature.parameters[i];
-                    if (!parameter) {
-                        continue;
-                    }
-
-                    const paramName = this.extractParameterName(parameter.label, signature.label);
-                    if (!paramName) {
-                        continue;
-                    }
-
-                    if (this.shouldHideHint(arg, paramName, config)) {
-                        continue;
-                    }
-
-                    const hint = new vscode.InlayHint(
-                        arg.position,
-                        `${paramName}:`,
-                        vscode.InlayHintKind.Parameter
-                    );
-
-                    hint.paddingRight = true;
-                    hints.push(hint);
-                }
+            if (config.get<boolean>('showReturnTypeHints', true)) {
+                const returnTypeHints = await this.getReturnTypeHints(document, range, token);
+                hints.push(...returnTypeHints);
             }
         } catch {
             return hints;
         }
 
         return hints;
+    }
+
+    private async getParameterHints(
+        document: vscode.TextDocument,
+        range: vscode.Range,
+        token: vscode.CancellationToken,
+        config: vscode.WorkspaceConfiguration
+    ): Promise<vscode.InlayHint[]> {
+        const hints: vscode.InlayHint[] = [];
+        const functionCalls = parseFunctionCalls(document, range);
+
+        for (const call of functionCalls) {
+            if (token.isCancellationRequested) {
+                break;
+            }
+
+            const signatureHelp = await getSignatureHelp(document, call.position);
+
+            if (!signatureHelp || signatureHelp.signatures.length === 0) {
+                continue;
+            }
+
+            const signature = signatureHelp.signatures[signatureHelp.activeSignature || 0];
+
+            if (!signature.parameters || signature.parameters.length === 0) {
+                continue;
+            }
+
+            for (let i = 0; i < call.arguments.length; i++) {
+                const arg = call.arguments[i];
+
+                if (arg.isNamed) {
+                    continue;
+                }
+
+                const parameter = signature.parameters[i];
+                if (!parameter) {
+                    continue;
+                }
+
+                const paramName = this.extractParameterName(parameter.label, signature.label);
+                if (!paramName) {
+                    continue;
+                }
+
+                if (this.shouldHideHint(arg, paramName, config)) {
+                    continue;
+                }
+
+                const hint = new vscode.InlayHint(
+                    arg.position,
+                    `${paramName}:`,
+                    vscode.InlayHintKind.Parameter
+                );
+
+                hint.paddingRight = true;
+                hints.push(hint);
+            }
+        }
+
+        return hints;
+    }
+
+    private async getReturnTypeHints(
+        document: vscode.TextDocument,
+        range: vscode.Range,
+        token: vscode.CancellationToken
+    ): Promise<vscode.InlayHint[]> {
+        const hints: vscode.InlayHint[] = [];
+        const declarations = parseFunctionDeclarations(document, range);
+
+        for (const decl of declarations) {
+            if (token.isCancellationRequested) {
+                break;
+            }
+
+            if (decl.hasReturnType) {
+                continue;
+            }
+
+            const returnType = await this.getReturnTypeFromHover(document, decl.namePosition);
+            if (!returnType) {
+                continue;
+            }
+
+            const hint = new vscode.InlayHint(
+                decl.returnTypePosition,
+                `: ${returnType}`,
+                vscode.InlayHintKind.Type
+            );
+
+            hint.paddingLeft = true;
+            hints.push(hint);
+        }
+
+        return hints;
+    }
+
+    private async getReturnTypeFromHover(
+        document: vscode.TextDocument,
+        position: vscode.Position
+    ): Promise<string | null> {
+        try {
+            const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
+                'vscode.executeHoverProvider',
+                document.uri,
+                position
+            );
+
+            if (!hovers || hovers.length === 0) {
+                return null;
+            }
+
+            for (const hover of hovers) {
+                for (const content of hover.contents) {
+                    const text =
+                        content instanceof vscode.MarkdownString ? content.value : String(content);
+
+                    const returnType = this.extractReturnTypeFromHover(text);
+                    if (returnType) {
+                        return returnType;
+                    }
+                }
+            }
+
+            return null;
+        } catch {
+            return null;
+        }
+    }
+
+    private extractReturnTypeFromHover(hoverText: string): string | null {
+        const patterns = [
+            /function\s+\w+\s*\([^)]*\)\s*:\s*([^\s{]+)/,
+            /\):\s*([^\s{]+)/,
+            /@return\s+(\S+)/,
+        ];
+
+        for (const pattern of patterns) {
+            const match = hoverText.match(pattern);
+            if (match && match[1]) {
+                const type = match[1].replace(/```.*$/, '').trim();
+                if (type && type !== 'void' && !type.includes('`')) {
+                    return type;
+                }
+            }
+        }
+
+        return null;
     }
 
     private extractParameterName(
