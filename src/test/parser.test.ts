@@ -91,6 +91,78 @@ suite('Parser Test Suite', () => {
             assert.strictEqual(calls.length, 1, 'Should find one method call');
             assert.strictEqual(calls[0].arguments.length, 1, 'Should find one argument');
         });
+
+        test('Parse nullsafe operator with method call', () => {
+            const content = `<?php
+            class Config {
+                public static function findOne(array $condition) {
+                    return new static();
+                }
+                public $value;
+            }
+            class TwoCaptcha {
+                public function __construct(string $apiKey) {}
+            }
+            $solver = new TwoCaptcha(Config::findOne(['key' => 'test'])?->value);
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 3, `Should find 3 calls, found ${calls.length}`);
+
+            const callsWith1Arg = calls.filter((c) => c.arguments.length === 1);
+            assert.ok(callsWith1Arg.length >= 1, 'Should have at least 1 call with 1 argument');
+        });
+
+        test('Parse method chaining', () => {
+            const content = `<?php
+            class Query {
+                public function select(array $columns) { return $this; }
+                public function where(string $condition) { return $this; }
+                public function all() { return []; }
+            }
+            class Category {
+                public static function find() { return new Query(); }
+            }
+            $result = Category::find()
+                ->select(['id', 'name'])
+                ->where("status = 1")
+                ->all();
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(
+                calls.length,
+                5,
+                `Should find 5 method calls, found ${calls.length}`
+            );
+
+            const callsWith0Args = calls.filter((c) => c.arguments.length === 0);
+            const callsWith1Arg = calls.filter((c) => c.arguments.length === 1);
+
+            assert.ok(callsWith0Args.length >= 2, 'Should have at least 2 calls with 0 arguments');
+            assert.ok(callsWith1Arg.length >= 2, 'Should have at least 2 calls with 1 argument');
+        });
+
+        test('Parse static method call', () => {
+            const content = `<?php
+            class Math {
+                public static function max($a, $b) {
+                    return $a > $b ? $a : $b;
+                }
+            }
+            $result = Math::max(5, 10);
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 1, `Should find 1 call, found ${calls.length}`);
+            assert.strictEqual(calls[0].arguments.length, 2, 'Math::max should have 2 arguments');
+        });
     });
 
     suite('Function Declarations Parsing', () => {
