@@ -3,254 +3,242 @@
 /**
  * Return Type Hints
  *
- * Tests inlay hints for function return types
+ * Tests inlay hints for function return types when type is NOT declared
+ * but can be inferred from PHPDoc or return statements
  */
 
 // ============================================================================
-// BASIC SCALAR RETURN TYPES
+// PHPDoc RETURN TYPES (Most reliable)
 // ============================================================================
 
-// Expected: : void
-function doNothing(): void {
-    // nothing
-}
-
-// Expected: : string
-function getString(): string {
+/**
+ * @return string
+ */
+function getStringFromDoc() {
     return "hello";
 }
 
-// Expected: : int
-function getNumber(): int {
+/**
+ * @return int
+ */
+function getIntFromDoc() {
     return 42;
 }
 
-// Expected: : float
-function getFloat(): float {
+/**
+ * @return float
+ */
+function getFloatFromDoc() {
     return 3.14;
 }
 
-// Expected: : bool
-function getBool(): bool {
+/**
+ * @return bool
+ */
+function getBoolFromDoc() {
     return true;
 }
 
-// Expected: : array
-function getArray(): array {
+/**
+ * @return array
+ */
+function getArrayFromDoc() {
     return [];
 }
 
-// Expected: : object
-function getObject(): object {
-    return new stdClass();
-}
-
-// ============================================================================
-// NULLABLE TYPES
-// ============================================================================
-
-// Expected: : ?string
-function getNullableString(): ?string {
-    return null;
-}
-
-// Expected: : ?int
-function getNullableInt(): ?int {
-    return null;
-}
-
-// Expected: : ?User
-function findUser(int $id): ?User {
+/**
+ * Gets a user by ID
+ * @param int $id User ID
+ * @return User|null
+ */
+function findUserFromDoc($id) {
     return $id > 0 ? new User("John") : null;
 }
 
-// Alternative nullable syntax (PHP 8.0+)
-// Expected: : string|null
-function getName(): string|null {
-    return "John";
+/**
+ * @return string[]
+ */
+function getStringArrayFromDoc() {
+    return ["a", "b", "c"];
+}
+
+/**
+ * @return array<string, int>
+ */
+function getMapFromDoc() {
+    return ["a" => 1, "b" => 2];
 }
 
 // ============================================================================
-// CLASS/INTERFACE TYPES
+// INFERRED FROM RETURN STATEMENTS (Simple literals)
 // ============================================================================
 
-class User {
-    public function __construct(public string $name) {}
+// Expected hint: : string (inferred from string literal)
+function getString() {
+    return "hello";
 }
 
-interface Repository {}
-
-// Expected: : User
-function getUser(): User {
-    return new User("John");
-}
-
-// Expected: : Repository
-function getRepository(): Repository {
-    return new class implements Repository {};
-}
-
-// ============================================================================
-// SELF/STATIC/PARENT TYPES
-// ============================================================================
-
-class Builder {
-    // Expected: : self
-    public function build(): self {
-        return $this;
-    }
-
-    // Expected: : self
-    public function reset(): self {
-        return $this;
-    }
-}
-
-class Factory {
-    // Expected: : static
-    public static function create(): static {
-        return new static();
-    }
-
-    // Expected: : static
-    public static function instance(): static {
-        return new static();
-    }
-}
-
-// ============================================================================
-// UNION TYPES (PHP 8.0+)
-// ============================================================================
-
-// Expected: : int|float
-function getNumeric(): int|float {
+// Expected hint: : int (inferred from integer literal)
+function getNumber() {
     return 42;
 }
 
-// Expected: : string|int
-function getId(bool $asString): string|int {
-    return $asString ? "123" : 123;
+// Expected hint: : float (inferred from float literal)
+function getFloat() {
+    return 3.14;
 }
 
-// Expected: : array|false
-function getData(): array|false {
-    return [];
-}
-
-// Expected: : int|string|bool
-function getValue(): int|string|bool {
+// Expected hint: : bool (inferred from boolean literal)
+function getBoolTrue() {
     return true;
 }
 
-// ============================================================================
-// MIXED TYPE (PHP 8.0+)
-// ============================================================================
-
-// Expected: : mixed
-function getAny(): mixed {
-    return 123;
+// Expected hint: : bool (inferred from boolean literal)
+function getBoolFalse() {
+    return false;
 }
 
-// Expected: : mixed
-function processValue(string $key): mixed {
-    return $_SESSION[$key] ?? null;
+// Expected hint: : array (inferred from array literal)
+function getEmptyArray() {
+    return [];
 }
 
-// ============================================================================
-// NEVER TYPE (PHP 8.1+)
-// ============================================================================
-
-// Expected: : never
-function fail(): never {
-    throw new Exception("Error");
+// Expected hint: : array (inferred from array literal)
+function getFilledArray() {
+    return [1, 2, 3];
 }
 
-// Expected: : never
-function terminate(string $message): never {
-    die($message);
+// Expected hint: : null (inferred from null literal)
+function getNull() {
+    return null;
 }
 
 // ============================================================================
-// ARROW FUNCTIONS (PHP 7.4+)
-// ============================================================================
-
-// Expected: : int
-$double = fn(int $x): int => $x * 2;
-
-// Expected: : string
-$format = fn(string $name): string => "Hello, $name";
-
-// Expected: : bool
-$isPositive = fn(int $n): bool => $n > 0;
-
-// ============================================================================
-// CLOSURES/ANONYMOUS FUNCTIONS
-// ============================================================================
-
-// Expected: : int
-$sum = function(int $a, int $b): int {
-    return $a + $b;
-};
-
-// Expected: : void
-$log = function(string $msg): void {
-    echo $msg;
-};
-
-// Expected: : ?string
-$find = function(array $items, string $key): ?string {
-    return $items[$key] ?? null;
-};
-
-// ============================================================================
-// CLASS METHODS
+// CLASS METHODS WITHOUT RETURN TYPE
 // ============================================================================
 
 class Calculator {
-    // Expected: : int
-    public function add(int $a, int $b): int {
+    /**
+     * @return int
+     */
+    public function add($a, $b) {
         return $a + $b;
     }
 
-    // Expected: : float
-    public function divide(float $a, float $b): float {
+    /**
+     * @return float
+     */
+    public function divide($a, $b) {
         return $a / $b;
     }
 
-    // Expected: : self
-    public function instance(): self {
+    // Inferred from literal
+    public function getDefaultValue() {
+        return 0;
+    }
+
+    /**
+     * @return self
+     */
+    public function instance() {
         return $this;
     }
 
-    // Expected: : static
-    public static function create(): static {
+    /**
+     * @return static
+     */
+    public static function create() {
         return new static();
     }
 }
 
 // ============================================================================
-// GENERATOR FUNCTIONS
+// CLOSURES AND ARROW FUNCTIONS WITHOUT RETURN TYPE
 // ============================================================================
 
-// Expected: : \Generator
-function generateNumbers(int $start, int $end): \Generator {
-    for ($i = $start; $i <= $end; $i++) {
-        yield $i;
-    }
-}
+// PHPDoc before closure
+/** @return int */
+$double = function($x) {
+    return $x * 2;
+};
+
+// Inferred from literal
+$greet = function($name) {
+    return "Hello, " . $name;
+};
+
+// Arrow function - inferred from literal
+$isPositive = fn($n) => $n > 0;
 
 // ============================================================================
-// NO RETURN TYPE - NO HINT EXPECTED
+// EDGE CASES - NO HINT EXPECTED
 // ============================================================================
 
+// No return type, no PHPDoc, returns variable - cannot infer
 function noReturnType($value) {
     return $value;
 }
 
-function alsoNoReturnType(string $name) {
-    echo $name;
+// Returns expression result - cannot easily infer
+function addNumbers($a, $b) {
+    return $a + $b;
 }
 
+// Multiple return types - cannot infer single type
+function maybeString($flag) {
+    if ($flag) {
+        return "yes";
+    }
+    return null;
+}
+
+// Already has return type - no hint needed
+function alreadyTyped(): string {
+    return "typed";
+}
+
+// No return statement, implicit void - could show : void
 function implicitVoid() {
-    // no return statement
+    echo "side effect";
+}
+
+// ============================================================================
+// COMPLEX PHPDoc TYPES
+// ============================================================================
+
+/**
+ * @return \Generator<int, string>
+ */
+function generateStrings() {
+    yield "a";
+    yield "b";
+}
+
+/**
+ * @return callable(int): string
+ */
+function getFormatter() {
+    return fn($n) => (string)$n;
+}
+
+/**
+ * @return array{name: string, age: int}
+ */
+function getPerson() {
+    return ["name" => "John", "age" => 30];
+}
+
+/**
+ * @return class-string<User>
+ */
+function getUserClass() {
+    return User::class;
+}
+
+// ============================================================================
+// HELPER CLASS
+// ============================================================================
+
+class User {
+    public function __construct(public string $name) {}
 }
