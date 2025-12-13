@@ -112,7 +112,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                 continue;
             }
 
-            const returnType = await getReturnTypeAtPosition(document, decl.position);
+            const returnType = await getReturnTypeAtPosition(document, decl.namePosition);
             if (!returnType) {
                 continue;
             }

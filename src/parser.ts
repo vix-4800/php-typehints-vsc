@@ -14,6 +14,7 @@ export interface FunctionCallInfo {
 
 export interface FunctionDeclarationInfo {
     position: vscode.Position;
+    namePosition: vscode.Position;
     hasReturnType: boolean;
 }
 
@@ -303,8 +304,14 @@ function extractFunctionDeclarationInfo(
 
     const position = findReturnTypeHintPosition(node, document);
 
+    const namePosition =
+        node.name && typeof node.name === 'object' && node.name.loc
+            ? new vscode.Position(node.name.loc.start.line - 1, node.name.loc.start.column)
+            : funcPosition;
+
     return {
         position,
+        namePosition,
         hasReturnType,
     };
 }
