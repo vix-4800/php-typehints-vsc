@@ -5,7 +5,6 @@ import { parseFunctionCalls } from '../parser';
 suite('Parser Test Suite', () => {
 
     function createMockDocument(content: string): vscode.TextDocument {
-        // Create a mock document for testing
         return {
             getText: () => content,
             lineCount: content.split('\n').length,
@@ -34,7 +33,7 @@ suite('Parser Test Suite', () => {
                 const lines = content.split('\n');
                 let offset = 0;
                 for (let i = 0; i < position.line; i++) {
-                    offset += lines[i].length + 1; // +1 for newline
+                    offset += lines[i].length + 1;
                 }
                 offset += position.character;
                 return offset;
@@ -172,9 +171,11 @@ array_map(static fn($x) => $x * 2, $values);
         assert.ok(calls.length > 0, 'Should find function call');
         const call = calls[0];
         assert.strictEqual(call.arguments.length, 2, 'Should have 2 arguments');
-        // The position should be before 'static', not before 'fn'
-        // 'static' starts at column 10 in 'array_map(static fn...'
-        assert.strictEqual(call.arguments[0].position.character, 10, 'Position should be at start of "static"');
+        assert.strictEqual(
+            call.arguments[0].position.character,
+            10,
+            'Position should be at start of "static"'
+        );
     });
 
     test('Should parse nested function calls', () => {
@@ -233,16 +234,13 @@ greet("Dave", greeting: "Aloha");
 
     test('Should handle parse errors gracefully', () => {
         const content = `<?php
-// Invalid PHP syntax
 greet("John" "Hi");
 `;
         const doc = createMockDocument(content);
         const range = new vscode.Range(0, 0, 10, 0);
 
-        // Should not throw
         const calls = parseFunctionCalls(doc, range);
 
-        // Result might be empty or partial, but should not crash
         assert.ok(Array.isArray(calls), 'Should return an array');
     });
 });

@@ -1,26 +1,17 @@
 import * as vscode from 'vscode';
-import { Engine, Node, Program, Call, New, Identifier, Variable } from 'php-parser';
+import { Engine, Node, Program, Call, New } from 'php-parser';
 
-/**
- * Information about a function call argument
- */
 export interface ArgumentInfo {
     position: vscode.Position;
     text: string;
     isNamed: boolean;
 }
 
-/**
- * Information about a function call
- */
 export interface FunctionCallInfo {
-    position: vscode.Position; // Position for signature help (inside parentheses)
+    position: vscode.Position;
     arguments: ArgumentInfo[];
 }
 
-/**
- * Parse PHP document to find function calls and their arguments
- */
 export function parseFunctionCalls(
     document: vscode.TextDocument,
     range: vscode.Range
@@ -40,27 +31,21 @@ export function parseFunctionCalls(
             },
         });
 
-        // Parse the PHP code
         let ast: Program;
         try {
             ast = parser.parseCode(text, 'document.php');
-        } catch (parseError) {
-            console.error('PHP parse error:', parseError);
+        } catch {
             return calls;
         }
 
-        // Traverse AST to find function calls
         traverseNode(ast, (node: Node) => {
-            // Handle function calls and method calls
             if (node.kind === 'call') {
                 const callNode = node as Call;
                 const callInfo = extractCallInfo(callNode, document, range);
                 if (callInfo) {
                     calls.push(callInfo);
                 }
-            }
-            // Handle 'new' expressions (constructor calls)
-            else if (node.kind === 'new') {
+            } else if (node.kind === 'new') {
                 const newNode = node as New;
                 const callInfo = extractNewInfo(newNode, document, range);
                 if (callInfo) {
@@ -68,16 +53,13 @@ export function parseFunctionCalls(
                 }
             }
         });
-    } catch (error) {
-        console.error('Error parsing PHP document:', error);
+    } catch {
+        return calls;
     }
 
     return calls;
 }
 
-/**
- * Extract call information from a Call node
- */
 function extractCallInfo(
     node: Call,
     document: vscode.TextDocument,
@@ -87,15 +69,12 @@ function extractCallInfo(
         return null;
     }
 
-    // Check if the call is within the requested range
     const callPosition = new vscode.Position(node.loc.start.line - 1, node.loc.start.column);
 
     if (!range.contains(callPosition)) {
         return null;
     }
 
-    // Find the position of the opening parenthesis
-    // We need to search for '(' after the function name
     const signatureHelpPosition = findOpeningParenPosition(node, document);
     if (!signatureHelpPosition) {
         return null;
@@ -103,7 +82,6 @@ function extractCallInfo(
 
     const args: ArgumentInfo[] = [];
 
-    // Extract argument information
     for (const arg of node.arguments) {
         const argInfo = extractArgumentInfo(arg, document);
         if (argInfo) {
@@ -117,9 +95,6 @@ function extractCallInfo(
     };
 }
 
-/**
- * Extract call information from a New node (constructor)
- */
 function extractNewInfo(
     node: New,
     document: vscode.TextDocument,
@@ -135,7 +110,6 @@ function extractNewInfo(
         return null;
     }
 
-    // Find the position of the opening parenthesis for constructor
     const signatureHelpPosition = findOpeningParenPosition(node, document);
     if (!signatureHelpPosition) {
         return null;
@@ -156,9 +130,6 @@ function extractNewInfo(
     };
 }
 
-/**
- * Find the position right after the opening parenthesis of a function/constructor call
- */
 function findOpeningParenPosition(
     node: Call | New,
     document: vscode.TextDocument
@@ -167,27 +138,22 @@ function findOpeningParenPosition(
         return null;
     }
 
-    // Get the text from the start of the node to a reasonable length
     const startLine = node.loc.start.line - 1;
     const startCol = node.loc.start.column;
     const endLine = node.loc.end.line - 1;
     const endCol = node.loc.end.column;
 
-    // Get the entire call text
     const nodeRange = new vscode.Range(
         new vscode.Position(startLine, startCol),
         new vscode.Position(endLine, endCol)
     );
     const nodeText = document.getText(nodeRange);
 
-    // Find the first opening parenthesis
     const parenIndex = nodeText.indexOf('(');
     if (parenIndex === -1) {
         return null;
     }
 
-    // Calculate the position right after the '('
-    // Count newlines before the paren to find the correct line
     const textBeforeParen = nodeText.substring(0, parenIndex);
     const lines = textBeforeParen.split('\n');
     const lineOffset = lines.length - 1;
@@ -196,31 +162,23 @@ function findOpeningParenPosition(
     let finalCol: number;
 
     if (lineOffset === 0) {
-        // Same line
         finalLine = startLine;
-        finalCol = startCol + parenIndex + 1; // +1 to be after '('
+        finalCol = startCol + parenIndex + 1;
     } else {
-        // Different line
         finalLine = startLine + lineOffset;
-        finalCol = lines[lines.length - 1].length + 1; // +1 to be after '('
+        finalCol = lines[lines.length - 1].length + 1;
     }
 
     return new vscode.Position(finalLine, finalCol);
 }
 
-/**
- * Extract information about a single argument
- */
 function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentInfo | null {
     if (!arg.loc) {
         return null;
     }
 
-    // Check if this is a named argument (PHP 8.0+)
-    // Named arguments have kind === 'namedargument'
     const isNamed = arg.kind === 'namedargument';
 
-    // For named arguments, we need the position of the value, not the name
     let position: vscode.Position;
     if (isNamed && arg.value && arg.value.loc) {
         position = new vscode.Position(arg.value.loc.start.line - 1, arg.value.loc.start.column);
@@ -228,15 +186,11 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
         position = new vscode.Position(arg.loc.start.line - 1, arg.loc.start.column);
     }
 
-    // For static closures/arrow functions, the loc.start points to 'fn' or 'function',
-    // but we need to include 'static' keyword before it
     if ((arg.kind === 'arrowfunc' || arg.kind === 'closure') && arg.isStatic) {
-        // Look backwards from the current position to find 'static' keyword
         const line = document.lineAt(position.line).text;
         const beforeArg = line.substring(0, position.character);
         const staticMatch = beforeArg.match(/static\s*$/);
         if (staticMatch) {
-            // Adjust position to include 'static'
             position = new vscode.Position(
                 position.line,
                 position.character - staticMatch[0].length
@@ -244,7 +198,6 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
         }
     }
 
-    // Extract argument text
     const argRange = new vscode.Range(
         new vscode.Position(arg.loc.start.line - 1, arg.loc.start.column),
         new vscode.Position(arg.loc.end.line - 1, arg.loc.end.column)
@@ -258,20 +211,15 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
     };
 }
 
-/**
- * Traverse AST and call visitor for each node
- */
 function traverseNode(node: any, visitor: (node: Node) => void): void {
     if (!node || typeof node !== 'object') {
         return;
     }
 
-    // Call visitor for current node
     if (node.kind) {
         visitor(node as Node);
     }
 
-    // Recursively traverse children
     for (const key in node) {
         if (node.hasOwnProperty(key)) {
             const value = node[key];
