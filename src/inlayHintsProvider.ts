@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { parseFunctionCalls } from './parser';
-import { getSignatureHelp } from './signatureHelper';
+import { parseFunctionCalls } from './parser.js';
+import { getSignatureHelp } from './signatureHelper.js';
 
 /**
  * Provider for PHP parameter inlay hints

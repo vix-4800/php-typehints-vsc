@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { PhpInlayHintsProvider } from './inlayHintsProvider';
+import { PhpInlayHintsProvider } from './inlayHintsProvider.js';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('PHP Parameter Hints extension is activating...');
