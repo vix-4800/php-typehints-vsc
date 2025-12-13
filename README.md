@@ -12,7 +12,7 @@ Display parameter names as inlay hints for PHP function calls, powered by Intele
 
 ## Screenshot
 
-<!-- TODO: Add screenshot here -->
+![alt text](image.png)
 
 ## Requirements
 
