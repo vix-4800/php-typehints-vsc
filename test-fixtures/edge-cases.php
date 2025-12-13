@@ -10,16 +10,16 @@
 // EDGE CASE 1: Strings with special characters that look like syntax
 // ============================================================================
 
-function log(string $message, string $level = "info"): void {
+function writeLog(string $message, string $level = "info"): void {
     echo "[$level] $message\n";
 }
 
 // Strings containing parentheses, commas, colons
-// Expected: log(message: "Error (code: 500), retry", level: "error")
-log("Error (code: 500), retry", "error");
+// Expected: writeLog(message: "Error (code: 500), retry", level: "error")
+writeLog("Error (code: 500), retry", "error");
 
-// Expected: log(message: "Function call: foo(1, 2, 3)")
-log("Function call: foo(1, 2, 3)");
+// Expected: writeLog(message: "Function call: foo(1, 2, 3)")
+writeLog("Function call: foo(1, 2, 3)");
 
 // ============================================================================
 // EDGE CASE 2: Multiline function calls
