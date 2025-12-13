@@ -186,13 +186,21 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
     const isNamed = arg.kind === 'namedargument';
 
     let position: vscode.Position;
+    let actualArg = arg;
+
     if (isNamed && arg.value && arg.value.loc) {
-        position = new vscode.Position(arg.value.loc.start.line - 1, arg.value.loc.start.column);
-    } else {
-        position = new vscode.Position(arg.loc.start.line - 1, arg.loc.start.column);
+        actualArg = arg.value;
     }
 
-    if ((arg.kind === 'arrowfunc' || arg.kind === 'closure') && arg.isStatic) {
+    if (actualArg.kind === 'propertylookup' || actualArg.kind === 'nullsafepropertylookup') {
+        if (actualArg.what && actualArg.what.loc) {
+            actualArg = actualArg.what;
+        }
+    }
+
+    position = new vscode.Position(actualArg.loc.start.line - 1, actualArg.loc.start.column);
+
+    if ((actualArg.kind === 'arrowfunc' || actualArg.kind === 'closure') && actualArg.isStatic) {
         const line = document.lineAt(position.line).text;
         const beforeArg = line.substring(0, position.character);
         const staticMatch = beforeArg.match(/static\s*$/);
