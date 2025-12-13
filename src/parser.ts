@@ -228,6 +228,22 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
         position = new vscode.Position(arg.loc.start.line - 1, arg.loc.start.column);
     }
 
+    // For static closures/arrow functions, the loc.start points to 'fn' or 'function',
+    // but we need to include 'static' keyword before it
+    if ((arg.kind === 'arrowfunc' || arg.kind === 'closure') && arg.isStatic) {
+        // Look backwards from the current position to find 'static' keyword
+        const line = document.lineAt(position.line).text;
+        const beforeArg = line.substring(0, position.character);
+        const staticMatch = beforeArg.match(/static\s*$/);
+        if (staticMatch) {
+            // Adjust position to include 'static'
+            position = new vscode.Position(
+                position.line,
+                position.character - staticMatch[0].length
+            );
+        }
+    }
+
     // Extract argument text
     const argRange = new vscode.Range(
         new vscode.Position(arg.loc.start.line - 1, arg.loc.start.column),

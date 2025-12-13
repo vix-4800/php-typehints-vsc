@@ -160,6 +160,23 @@ Calculator::multiply(4, 6);
         assert.strictEqual(calls[0].arguments.length, 2, 'Should have 2 arguments');
     });
 
+    test('Should handle static closure with correct position', () => {
+        const content = `<?php
+array_map(static fn($x) => $x * 2, $values);
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const calls = parseFunctionCalls(doc, range);
+
+        assert.ok(calls.length > 0, 'Should find function call');
+        const call = calls[0];
+        assert.strictEqual(call.arguments.length, 2, 'Should have 2 arguments');
+        // The position should be before 'static', not before 'fn'
+        // 'static' starts at column 10 in 'array_map(static fn...'
+        assert.strictEqual(call.arguments[0].position.character, 10, 'Position should be at start of "static"');
+    });
+
     test('Should parse nested function calls', () => {
         const content = `<?php
 outer(inner(5));
