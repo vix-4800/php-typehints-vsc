@@ -8,7 +8,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
         range: vscode.Range,
         token: vscode.CancellationToken
     ): Promise<vscode.InlayHint[]> {
-        const config = vscode.workspace.getConfiguration('phpParameterHints');
+        const config = vscode.workspace.getConfiguration('phpTypeHints');
 
         if (!config.get<boolean>('enabled', true)) {
             return [];

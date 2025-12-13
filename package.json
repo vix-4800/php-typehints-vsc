@@ -1,7 +1,7 @@
 {
     "name": "php-typehints-vsc",
-    "displayName": "PHP Parameter Hints",
-    "description": "Display parameter names as inlay hints for PHP function calls",
+    "displayName": "PHP Type Hints",
+    "description": "Display parameter names and return types as inlay hints for PHP",
     "version": "0.0.1",
     "license": "MIT",
     "publisher": "vix",
@@ -40,29 +40,29 @@
     "main": "./out/extension.js",
     "contributes": {
         "configuration": {
-            "title": "PHP Parameter Hints",
+            "title": "PHP Type Hints",
             "properties": {
-                "phpParameterHints.enabled": {
+                "phpTypeHints.enabled": {
                     "type": "boolean",
                     "default": true,
-                    "description": "Enable/disable PHP parameter hints"
+                    "description": "Enable/disable PHP type hints (parameters and return types)"
                 },
-                "phpParameterHints.hideWhenArgumentMatchesName": {
+                "phpTypeHints.hideWhenArgumentMatchesName": {
                     "type": "boolean",
                     "default": true,
                     "description": "Hide hint when variable name matches parameter name (e.g., setUser($user))"
                 },
-                "phpParameterHints.showForBuiltInFunctions": {
+                "phpTypeHints.showForBuiltInFunctions": {
                     "type": "boolean",
                     "default": true,
                     "description": "Show hints for built-in PHP functions"
                 },
-                "phpParameterHints.showParameterHints": {
+                "phpTypeHints.showParameterHints": {
                     "type": "boolean",
                     "default": true,
                     "description": "Show parameter name hints for function calls"
                 },
-                "phpParameterHints.showReturnTypeHints": {
+                "phpTypeHints.showReturnTypeHints": {
                     "type": "boolean",
                     "default": true,
                     "description": "Show return type hints for function declarations"
