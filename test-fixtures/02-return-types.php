@@ -235,6 +235,27 @@ function getUserClass() {
     return User::class;
 }
 
+/**
+ * @return string[]
+ */
+function getNames() {
+    return ["Alice", "Bob"];
+}
+
+/**
+ * @return array<string>|null
+ */
+function maybeGetArray() {
+    return null;
+}
+
+/**
+ * @return integer
+ */
+function getInteger() {
+    return 42;
+}
+
 // ============================================================================
 // HELPER CLASS
 // ============================================================================
