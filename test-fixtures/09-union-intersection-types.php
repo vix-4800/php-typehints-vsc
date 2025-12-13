@@ -102,24 +102,14 @@ interface Serializable {
 }
 
 // Note: Intersection types only work with interfaces/classes
-// function process(Countable&Serializable $object): void {
-//     // ...
-// }
+function process(Countable&Serializable $object): void {
+    // ...
+}
 
-// ============================================================================
-// DNF TYPES - Disjunctive Normal Form (PHP 8.2+)
-// ============================================================================
-
-// DNF allows combining union and intersection types
-// Example: (A&B)|C means either (A AND B) OR C
-
-// interface A {}
-// interface B {}
-// interface C {}
-
-// function handle((A&B)|C $value): void {
-//     // ...
-// }
+process(new class implements Countable, Serializable {
+    public function count(): int { return 42; }
+    public function serialize(): string { return "data"; }
+});
 
 // ============================================================================
 // UNION WITH FALSE/NULL/TRUE (PHP 8.2+)
