@@ -63,3 +63,7 @@ npm run package
 ## License
 
 [MIT License](LICENSE)
+
+## Alternatives
+
+- [PhpStorm Parameter Hints in VScode](https://marketplace.visualstudio.com/items?itemName=MrChetan.phpstorm-parameter-hints-in-vscode)
