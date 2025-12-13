@@ -62,4 +62,4 @@ npm run package
 
 ## License
 
-MIT
+[MIT License](LICENSE)
