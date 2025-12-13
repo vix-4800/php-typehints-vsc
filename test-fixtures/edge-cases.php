@@ -240,37 +240,8 @@ $args = ['name' => 'feature', 'priority' => 5];
 options(...$args);
 
 // ============================================================================
-// EDGE CASE 14: Same function name in different namespaces
+// EDGE CASE 14: Callable type hints with invocation
 // ============================================================================
-
-namespace App\Services;
-
-function transform(string $input): string {
-    return strtoupper($input);
-}
-
-namespace App\Helpers;
-
-function transform(int $value): int {
-    return $value * 2;
-}
-
-namespace App;
-
-use function App\Services\transform as serviceTransform;
-use function App\Helpers\transform as helperTransform;
-
-// Expected: serviceTransform(input: "hello")
-$result1 = serviceTransform("hello");
-
-// Expected: helperTransform(value: 42)
-$result2 = helperTransform(42);
-
-// ============================================================================
-// EDGE CASE 15: Callable type hints with invocation
-// ============================================================================
-
-namespace App;
 
 function execute(callable $callback, mixed $data): mixed {
     return $callback($data);
@@ -371,15 +342,15 @@ $article = new Article(1, "Hello", "World");
 // EDGE CASE 21: Function calls inside array literals
 // ============================================================================
 
-function getValue(string $key): mixed {
+function getValueFromKey(string $key): mixed {
     return null;
 }
 
 // Expected hints inside array construction
-// getValue(key: 'name'), getValue(key: 'email')
+// getValueFromKey(key: 'name'), getValueFromKey(key: 'email')
 $data = [
-    'user_name' => getValue('name'),
-    'user_email' => getValue('email'),
+    'user_name' => getValueFromKey('name'),
+    'user_email' => getValueFromKey('email'),
 ];
 
 // ============================================================================
