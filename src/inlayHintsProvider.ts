@@ -100,7 +100,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                     }
 
                     // Extract parameter name from the label
-                    const paramName = this.extractParameterName(parameter.label);
+                    const paramName = this.extractParameterName(parameter.label, signature.label);
                     this.outputChannel.appendLine(
                         `        Parameter: "${parameter.label}" → extracted: "${paramName}"`
                     );
@@ -145,11 +145,22 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
     /**
      * Extract parameter name from parameter label
      * Parameter label might be like "$name" or "string $name" or "$name: string"
+     * Or it can be a tuple [start, end] representing range in the signature label
      */
     private extractParameterName(
-        label: string | vscode.ParameterInformation['label']
+        label: string | vscode.ParameterInformation['label'],
+        signatureLabel: string
     ): string | null {
-        const labelStr = typeof label === 'string' ? label : label.toString();
+        let labelStr: string;
+
+        // If label is a tuple [start, end], extract substring from signature
+        if (Array.isArray(label)) {
+            const [start, end] = label;
+            labelStr = signatureLabel.substring(start, end);
+        } else {
+            // It's a string
+            labelStr = String(label);
+        }
 
         // Match parameter name (with or without $)
         // Patterns: "$name", "string $name", "$name: string", etc.
