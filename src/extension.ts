@@ -2,9 +2,13 @@ import * as vscode from 'vscode';
 import { PhpInlayHintsProvider } from './inlayHintsProvider.js';
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('PHP Parameter Hints extension is activating...');
+    // Create output channel for logging
+    const outputChannel = vscode.window.createOutputChannel('PHP Parameter Hints');
+    context.subscriptions.push(outputChannel);
 
-    const provider = new PhpInlayHintsProvider();
+    outputChannel.appendLine('PHP Parameter Hints extension is activating...');
+
+    const provider = new PhpInlayHintsProvider(outputChannel);
 
     // Register for both 'file' and 'untitled' schemes
     const selector: vscode.DocumentSelector = [
@@ -55,7 +59,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(testCommand);
 
-    console.log('PHP Parameter Hints extension activated successfully');
+    outputChannel.appendLine('PHP Parameter Hints extension activated successfully');
+    outputChannel.appendLine('---');
 }
 
 export function deactivate() {}

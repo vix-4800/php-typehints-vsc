@@ -6,18 +6,24 @@ import { getSignatureHelp } from './signatureHelper.js';
  * Provider for PHP parameter inlay hints
  */
 export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
+    constructor(private outputChannel: vscode.OutputChannel) {}
+
     async provideInlayHints(
         document: vscode.TextDocument,
         range: vscode.Range,
         token: vscode.CancellationToken
     ): Promise<vscode.InlayHint[]> {
-        console.log('provideInlayHints called for:', document.uri.fsPath);
+        this.outputChannel.appendLine(`\n[${new Date().toISOString()}] provideInlayHints called`);
+        this.outputChannel.appendLine(`File: ${document.uri.fsPath}`);
+        this.outputChannel.appendLine(
+            `Range: ${range.start.line}:${range.start.character} - ${range.end.line}:${range.end.character}`
+        );
 
         const config = vscode.workspace.getConfiguration('phpParameterHints');
 
         // Check if hints are enabled
         if (!config.get<boolean>('enabled', true)) {
-            console.log('Hints are disabled in settings');
+            this.outputChannel.appendLine('⚠️  Hints are disabled in settings');
             return [];
         }
 
@@ -26,7 +32,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
         try {
             // Parse the document to find function calls
             const functionCalls = parseFunctionCalls(document, range);
-            console.log(`Found ${functionCalls.length} function calls`);
+            this.outputChannel.appendLine(`Found ${functionCalls.length} function calls`);
 
             // For each function call, get signature information from Intelephense
             for (const call of functionCalls) {
@@ -34,59 +40,80 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                     break;
                 }
 
-                console.log(
-                    `Getting signature help at position: ${call.position.line}:${call.position.character}`
+                this.outputChannel.appendLine(
+                    `\n→ Getting signature help at position: ${call.position.line + 1}:${
+                        call.position.character + 1
+                    }`
                 );
 
                 // Get signature help from language server (Intelephense)
                 const signatureHelp = await getSignatureHelp(document, call.position);
 
                 if (!signatureHelp || signatureHelp.signatures.length === 0) {
-                    console.log('No signature help received');
+                    this.outputChannel.appendLine('  ⚠️  No signature help received');
                     continue;
                 }
 
-                console.log(`Got signature with ${signatureHelp.signatures.length} signatures`);
+                this.outputChannel.appendLine(
+                    `  ✓ Got ${signatureHelp.signatures.length} signature(s)`
+                );
 
                 // Get the active signature
                 const signature = signatureHelp.signatures[signatureHelp.activeSignature || 0];
 
                 if (!signature.parameters || signature.parameters.length === 0) {
-                    console.log('No parameters in signature');
+                    this.outputChannel.appendLine('  ⚠️  No parameters in signature');
                     continue;
                 }
 
-                console.log(
-                    `Signature has ${signature.parameters.length} parameters, call has ${call.arguments.length} arguments`
+                this.outputChannel.appendLine(
+                    `  Signature: ${signature.parameters.length} parameter(s), ${call.arguments.length} argument(s) in call`
                 );
 
                 if (!signature.parameters || signature.parameters.length === 0) {
+                    console.log('No parameters in signature - skipping');
                     continue;
                 }
 
                 // Create hints for each argument
                 for (let i = 0; i < call.arguments.length; i++) {
                     const arg = call.arguments[i];
+                    this.outputChannel.appendLine(
+                        `    [${i}] "${arg.text}" at ${arg.position.line + 1}:${
+                            arg.position.character + 1
+                        }`
+                    );
 
                     // Skip if this is a named argument (already has a name)
                     if (arg.isNamed) {
+                        this.outputChannel.appendLine(`        → Skipped (named argument)`);
                         continue;
                     }
 
                     // Get the parameter for this argument
                     const parameter = signature.parameters[i];
                     if (!parameter) {
+                        this.outputChannel.appendLine(
+                            `        → Skipped (no parameter at index ${i})`
+                        );
                         continue; // More arguments than parameters
                     }
 
                     // Extract parameter name from the label
                     const paramName = this.extractParameterName(parameter.label);
+                    this.outputChannel.appendLine(
+                        `        Parameter: "${parameter.label}" → extracted: "${paramName}"`
+                    );
                     if (!paramName) {
+                        this.outputChannel.appendLine(
+                            `        → Skipped (could not extract parameter name)`
+                        );
                         continue;
                     }
 
                     // Check if we should hide the hint
                     if (this.shouldHideHint(arg, paramName, config)) {
+                        this.outputChannel.appendLine(`        → Skipped (matches parameter name)`);
                         continue;
                     }
 
@@ -99,12 +126,19 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
 
                     hint.paddingRight = true;
                     hints.push(hint);
+                    this.outputChannel.appendLine(
+                        `        ✓ Created hint: "${paramName}:" at ${arg.position.line + 1}:${
+                            arg.position.character + 1
+                        }`
+                    );
                 }
             }
         } catch (error) {
-            console.error('Error providing inlay hints:', error);
+            this.outputChannel.appendLine(`\n❌ Error providing inlay hints: ${error}`);
         }
 
+        this.outputChannel.appendLine(`\n✓ Returning ${hints.length} inlay hint(s)`);
+        this.outputChannel.appendLine('='.repeat(60));
         return hints;
     }
 
