@@ -7,11 +7,39 @@
  */
 
 // ============================================================================
-// EDGE CASE 1: Strings with special characters that look like syntax
+// EDGE CASE 1: Return type hints - various types
 // ============================================================================
 
+// Expected return type hint: : void
 function writeLog(string $message, string $level = "info"): void {
     echo "[$level] $message\n";
+}
+
+// Expected return type hint: : string|int (union type, PHP 8.0+)
+function getId(bool $asString): string|int {
+    return $asString ? "123" : 123;
+}
+
+// Expected return type hint: : self (self return type)
+class Logger {
+    public function create(): self {
+        return new self();
+    }
+
+    // Expected return type hint: : static (static return type)
+    public static function getInstance(): static {
+        return new static();
+    }
+}
+
+// Expected return type hint: : mixed (mixed type, PHP 8.0+)
+function getValue(string $key): mixed {
+    return $_SESSION[$key] ?? null;
+}
+
+// Expected return type hint: : never (never type, PHP 8.1+)
+function terminate(string $message): never {
+    die($message);
 }
 
 // Strings containing parentheses, commas, colons

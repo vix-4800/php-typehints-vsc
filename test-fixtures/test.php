@@ -35,10 +35,51 @@ $exists = in_array($value, $array, true);
 // 2. USER-DEFINED FUNCTIONS
 // ============================================================================
 
+// Expected return type hint: : void
 function greet(string $name, string $greeting = "Hello", int $times = 1): void {
     for ($i = 0; $i < $times; $i++) {
         echo "$greeting, $name!\n";
     }
+}
+
+// Expected return type hint: : string
+function formatName(string $first, string $last): string {
+    return "$first $last";
+}
+
+// Expected return type hint: : int
+function add(int $a, int $b): int {
+    return $a + $b;
+}
+
+// Expected return type hint: : float
+function average(array $numbers): float {
+    return array_sum($numbers) / count($numbers);
+}
+
+// Expected return type hint: : bool
+function isValid(string $email): bool {
+    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+}
+
+// Expected return type hint: : array
+function getConfig(): array {
+    return ['debug' => true];
+}
+
+// Expected return type hint: : ?string (nullable)
+function findUser(int $id): ?string {
+    return $id > 0 ? "User $id" : null;
+}
+
+// Expected return type hint: : User (class type)
+function createDefaultUser(): User {
+    return new User("Guest", 0);
+}
+
+// Function without return type - NO HINT EXPECTED
+function logMessage(string $message) {
+    echo $message;
 }
 
 // Traditional positional arguments
@@ -92,10 +133,12 @@ $user3 = new User(name: "Charlie", age: 35);
 // ============================================================================
 
 class Calculator {
+    // Expected return type hint: : int
     public function add(int $a, int $b): int {
         return $a + $b;
     }
 
+    // Expected return type hint: : float
     public function divide(float $dividend, float $divisor): float {
         return $dividend / $divisor;
     }
