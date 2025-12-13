@@ -56,7 +56,7 @@ function extractReturnTypeFromHover(hover: vscode.Hover): string | null {
         const patterns = [
             /function\s+\w+\([^)]*\)\s*:\s*([^\s{]+)/,
             /\)\s*:\s*([^\s{]+)/,
-            /_@return_\s*`([^`]+)`/,
+            /_@return_\s*`([^`]+(?:\[\])?)`/,
             /@return\s+([^\s\n]+)/,
         ];
 
@@ -79,7 +79,7 @@ function extractReturnTypeFromHover(hover: vscode.Hover): string | null {
  * Normalize and clean return type string
  */
 function normalizeReturnType(type: string): string {
-    type = type.replace(/[{}()\[\]]/g, '').trim();
+    type = type.replace(/[{}()]/g, '').trim();
     type = type.replace(/^\((.*)\)$/, '$1');
     type = type.replace(/^\\+/, '');
 
