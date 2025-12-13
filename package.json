@@ -52,11 +52,6 @@
                     "default": true,
                     "description": "Hide hint when variable name matches parameter name (e.g., setUser($user))"
                 },
-                "phpTypeHints.showForBuiltInFunctions": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Show hints for built-in PHP functions"
-                },
                 "phpTypeHints.showParameterHints": {
                     "type": "boolean",
                     "default": true,

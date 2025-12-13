@@ -34,9 +34,6 @@ Display parameter names and return types as inlay hints for PHP.
 
     // Hide hint when variable name matches parameter name
     "phpTypeHints.hideWhenArgumentMatchesName": true,
-
-    // Show hints for built-in PHP functions
-    "phpTypeHints.showForBuiltInFunctions": true
 }
 ```
 
