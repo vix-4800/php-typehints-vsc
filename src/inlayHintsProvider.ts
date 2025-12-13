@@ -15,6 +15,13 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
             return [];
         }
 
+        const maxFileSize = config.get<number>('maxFileSize', 100000);
+        const fileSize = document.getText().length;
+
+        if (fileSize > maxFileSize) {
+            return [];
+        }
+
         const hints: vscode.InlayHint[] = [];
 
         try {

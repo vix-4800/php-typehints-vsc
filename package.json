@@ -68,6 +68,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Show return type hints for function declarations"
+                },
+                "phpTypeHints.maxFileSize": {
+                    "type": "number",
+                    "default": 100000,
+                    "description": "Maximum file size in bytes to process (default: 100KB)"
                 }
             }
         }

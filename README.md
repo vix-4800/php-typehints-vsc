@@ -34,8 +34,15 @@ Display parameter names and return types as inlay hints for PHP.
 
     // Hide hint when variable name matches parameter name
     "phpTypeHints.hideWhenArgumentMatchesName": true,
+
+    // Maximum file size to process (in bytes)
+    "phpTypeHints.maxFileSize": 100000
 }
 ```
+
+## Commands
+
+- **PHP Type Hints: Toggle Hints** - Quickly enable/disable all hints
 
 ## Development
 
