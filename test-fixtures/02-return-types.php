@@ -171,20 +171,20 @@ $greet = function($name) {
 $isPositive = fn($n) => $n > 0;
 
 // ============================================================================
-// EDGE CASES - NO HINT EXPECTED
+// EDGE CASES
 // ============================================================================
 
-// No return type, no PHPDoc, returns variable - cannot infer
+// Returns variable - shows : mixed
 function noReturnType($value) {
     return $value;
 }
 
-// Returns expression result - cannot easily infer
+// Returns expression result - shows : mixed
 function addNumbers($a, $b) {
     return $a + $b;
 }
 
-// Multiple return types - cannot infer single type
+// Multiple return types - shows : mixed
 function maybeString($flag) {
     if ($flag) {
         return "yes";
@@ -197,7 +197,7 @@ function alreadyTyped(): string {
     return "typed";
 }
 
-// No return statement, implicit void - could show : void
+// No return statement - shows : void
 function implicitVoid() {
     echo "side effect";
 }
