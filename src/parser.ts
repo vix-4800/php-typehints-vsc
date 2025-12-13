@@ -385,9 +385,9 @@ function extractReturnTypeFromPhpDoc(node: Function | Method): string | null {
     for (const comment of leadingComments) {
         if (comment.kind === 'commentblock' || comment.value?.includes('/**')) {
             const text = comment.value || '';
-            const match = text.match(/@return\s+([^\s*]+)/);
+            const match = text.match(/@return\s+(.+?)(?:\s*\*\/|\s*\n\s*\*\s*@|\s*\n\s*\*\/|\s*$)/);
             if (match && match[1]) {
-                return match[1];
+                return match[1].replace(/[\s*]+$/, '').trim();
             }
         }
     }
@@ -399,40 +399,57 @@ function extractReturnTypeFromPhpDoc(node: Function | Method): string | null {
  * Infer return type from return statements (only simple literals)
  */
 function inferReturnTypeFromStatements(node: Function | Method): string | null {
-    const returnTypes: Set<string> = new Set();
-
     if (node.kind === 'arrowfunc') {
         const arrowNode = node as any;
         if (arrowNode.body) {
             const type = inferTypeFromExpression(arrowNode.body);
-            if (type) {
-                return type;
-            }
+            return type || 'mixed';
         }
-        return null;
+        return 'mixed';
     }
 
     if (!node.body) {
         return null;
     }
 
+    const returnTypes: Set<string> = new Set();
+    let hasReturnWithValue = false;
+    let hasReturnWithoutValue = false;
+
     traverseNode(node.body, (childNode: Node) => {
         if (childNode.kind === 'return') {
             const returnNode = childNode as any;
             if (returnNode.expr) {
+                hasReturnWithValue = true;
                 const type = inferTypeFromExpression(returnNode.expr);
                 if (type) {
                     returnTypes.add(type);
+                } else {
+                    returnTypes.add('mixed');
                 }
+            } else {
+                hasReturnWithoutValue = true;
             }
         }
     });
+
+    if (!hasReturnWithValue && !hasReturnWithoutValue) {
+        return 'void';
+    }
+
+    if (!hasReturnWithValue && hasReturnWithoutValue) {
+        return 'void';
+    }
 
     if (returnTypes.size === 1) {
         return Array.from(returnTypes)[0];
     }
 
-    return null;
+    if (returnTypes.size > 1) {
+        return 'mixed';
+    }
+
+    return 'mixed';
 }
 
 /**

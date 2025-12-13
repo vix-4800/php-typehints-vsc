@@ -591,7 +591,7 @@ function getArray() {
         );
     });
 
-    test('Should NOT infer type when returning variable', () => {
+    test('Should infer mixed type when returning variable', () => {
         const content = `<?php
 function noReturnType($value) {
     return $value;
@@ -605,12 +605,12 @@ function noReturnType($value) {
         assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
         assert.strictEqual(
             declarations[0].inferredReturnType,
-            null,
-            'Should not infer type from variable'
+            'mixed',
+            'Should infer mixed type when returning variable'
         );
     });
 
-    test('Should NOT infer type when multiple return types exist', () => {
+    test('Should infer mixed type when multiple return types exist', () => {
         const content = `<?php
 function maybeString($flag) {
     if ($flag) {
@@ -627,8 +627,8 @@ function maybeString($flag) {
         assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
         assert.strictEqual(
             declarations[0].inferredReturnType,
-            null,
-            'Should not infer type when multiple types returned'
+            'mixed',
+            'Should infer mixed type when multiple types returned'
         );
     });
 
@@ -675,5 +675,113 @@ class Calculator {
         const method = declarations.find((d) => d.name === 'add');
         assert.ok(method, 'Should find add method');
         assert.strictEqual(method!.inferredReturnType, 'int', 'Should infer int type from PHPDoc');
+    });
+
+    test('Should infer void type when no return statements', () => {
+        const content = `<?php
+function implicitVoid() {
+    echo "side effect";
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'void',
+            'Should infer void type when no return'
+        );
+    });
+
+    test('Should infer void type when only empty return', () => {
+        const content = `<?php
+function earlyReturn($flag) {
+    if (!$flag) {
+        return;
+    }
+    echo "doing work";
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'void',
+            'Should infer void type when only empty return'
+        );
+    });
+
+    test('Should parse complex PHPDoc types with generics', () => {
+        const content = `<?php
+/**
+ * @return \\Generator<int, string>
+ */
+function generateStrings() {
+    yield "a";
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            '\\Generator<int, string>',
+            'Should parse full generic type from PHPDoc'
+        );
+    });
+
+    test('Should parse complex PHPDoc types with array shapes', () => {
+        const content = `<?php
+/**
+ * @return array{name: string, age: int}
+ */
+function getPerson() {
+    return ["name" => "John", "age" => 30];
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'array{name: string, age: int}',
+            'Should parse full array shape from PHPDoc'
+        );
+    });
+
+    test('Should parse callable PHPDoc type', () => {
+        const content = `<?php
+/**
+ * @return callable(int): string
+ */
+function getFormatter() {
+    return fn($n) => (string)$n;
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        const formatter = declarations.find((d) => d.name === 'getFormatter');
+        assert.ok(formatter, 'Should find getFormatter function');
+        assert.strictEqual(
+            formatter!.inferredReturnType,
+            'callable(int): string',
+            'Should parse callable type from PHPDoc'
+        );
     });
 });
