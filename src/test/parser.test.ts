@@ -163,6 +163,133 @@ suite('Parser Test Suite', () => {
             assert.strictEqual(calls.length, 1, `Should find 1 call, found ${calls.length}`);
             assert.strictEqual(calls[0].arguments.length, 2, 'Math::max should have 2 arguments');
         });
+
+        test('Parse variadic parameters', () => {
+            const content = `<?php
+            class MathUtils {
+                public static function max(int ...$numbers): int {
+                    return max(...$numbers);
+                }
+            }
+            $maximum = MathUtils::max(1, 5, 3, 9, 2);
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.ok(calls.length >= 1, 'Should find at least 1 call');
+            const maxCall = calls.find((c) => c.arguments.length === 5);
+            assert.ok(maxCall, 'Should find max call with 5 arguments');
+        });
+
+        test('Parse constructor calls', () => {
+            const content = `<?php
+            class User {
+                public function __construct(string $name, int $age) {}
+            }
+            $user = new User("Alice", 30);
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 1, 'Should find constructor call');
+            assert.strictEqual(calls[0].arguments.length, 2, 'Constructor should have 2 arguments');
+        });
+
+        test('Parse nested function calls', () => {
+            const content = `<?php
+            $result = strlen(trim($value));
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 2, 'Should find 2 nested calls');
+        });
+
+        test('Parse arrow function as argument', () => {
+            const content = `<?php
+            $doubled = array_map(fn($x) => $x * 2, $items);
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 1, 'Should find array_map call');
+            assert.strictEqual(calls[0].arguments.length, 2, 'Should have 2 arguments');
+        });
+
+        test('Parse function call with comments in arguments', () => {
+            const content = `<?php
+            configure(
+                "localhost", // development server
+                8080, // standard port
+                true // enable SSL
+            );
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 1, 'Should find configure call');
+            assert.strictEqual(
+                calls[0].arguments.length,
+                3,
+                'Should have 3 arguments despite comments'
+            );
+        });
+
+        test('Parse function call with heredoc argument', () => {
+            const content = `<?php
+            render(<<<EOT
+                <div>Content</div>
+                EOT,
+                ['key' => 'value']
+            );
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 1, 'Should find render call');
+            assert.strictEqual(
+                calls[0].arguments.length,
+                2,
+                'Should have 2 arguments with heredoc'
+            );
+        });
+
+        test('Parse function call with trailing comma', () => {
+            const content = `<?php
+            build(
+                "widget",
+                ['color' => 'blue'],
+            );
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 1, 'Should find build call');
+            assert.strictEqual(
+                calls[0].arguments.length,
+                2,
+                'Should have 2 arguments with trailing comma'
+            );
+        });
+
+        test('Parse mixed named and positional arguments', () => {
+            const content = `<?php
+            createUser("Bob", age: 28, email: "bob@example.com");
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 1, 'Should find createUser call');
+            assert.strictEqual(calls[0].arguments.length, 3, 'Should have 3 arguments');
+        });
     });
 
     suite('Function Declarations Parsing', () => {
@@ -220,6 +347,65 @@ suite('Parser Test Suite', () => {
 
             assert.strictEqual(declarations.length, 1, 'Should find one arrow function');
             assert.strictEqual(declarations[0].hasReturnType, false, 'Should not have return type');
+        });
+
+        test('Parse function with union type parameters', () => {
+            const content = `<?php
+            function process(int|float|string $value): string {
+                return (string) $value;
+            }
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const declarations = parseFunctionDeclarations(doc, range);
+
+            assert.strictEqual(declarations.length, 1, 'Should find one function');
+            assert.strictEqual(declarations[0].hasReturnType, true, 'Should have return type');
+        });
+
+        test('Parse function with variadic parameters', () => {
+            const content = `<?php
+            function sum(int ...$numbers): int {
+                return array_sum($numbers);
+            }
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const declarations = parseFunctionDeclarations(doc, range);
+
+            assert.strictEqual(declarations.length, 1, 'Should find one function');
+        });
+
+        test('Parse constructor with promoted properties', () => {
+            const content = `<?php
+            class Point {
+                public function __construct(
+                    public float $x,
+                    public float $y,
+                    public readonly float $z = 0.0
+                ) {}
+            }
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const declarations = parseFunctionDeclarations(doc, range);
+
+            assert.strictEqual(declarations.length, 1, 'Should find constructor');
+        });
+
+        test('Parse multiple functions in one document', () => {
+            const content = `<?php
+            function first(): void {}
+            function second($x) { return $x; }
+            class MyClass {
+                public function method(): int { return 1; }
+            }
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const declarations = parseFunctionDeclarations(doc, range);
+
+            assert.ok(declarations.length >= 3, 'Should find at least 3 function declarations');
         });
     });
 });
