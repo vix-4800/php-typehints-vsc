@@ -63,11 +63,9 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
         "pretest": "npm run compile && npm run lint",
         "lint": "eslint src",
         "test": "vscode-test",
-        "dev": "code --extensionDevelopmentPath=$PWD test-fixtures/test.php",
         "package": "vsce package"
     },
     "devDependencies": {
