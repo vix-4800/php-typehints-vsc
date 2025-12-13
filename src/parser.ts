@@ -144,23 +144,39 @@ function findOpeningParenPosition(
         return null;
     }
 
-    const startLine = node.loc.start.line - 1;
-    const startCol = node.loc.start.column;
+    let searchStartLine = node.loc.start.line - 1;
+    let searchStartCol = node.loc.start.column;
+
+    if (node.kind === 'call' && (node as any).what) {
+        const what = (node as any).what;
+
+        if (
+            (what.kind === 'propertylookup' || what.kind === 'nullsafepropertylookup') &&
+            what.offset?.loc
+        ) {
+            searchStartLine = what.offset.loc.start.line - 1;
+            searchStartCol = what.offset.loc.start.column;
+        } else if (what.kind === 'staticlookup' && what.offset?.loc) {
+            searchStartLine = what.offset.loc.start.line - 1;
+            searchStartCol = what.offset.loc.start.column;
+        }
+    }
+
     const endLine = node.loc.end.line - 1;
     const endCol = node.loc.end.column;
 
-    const nodeRange = new vscode.Range(
-        new vscode.Position(startLine, startCol),
+    const searchRange = new vscode.Range(
+        new vscode.Position(searchStartLine, searchStartCol),
         new vscode.Position(endLine, endCol)
     );
-    const nodeText = document.getText(nodeRange);
+    const searchText = document.getText(searchRange);
 
-    const parenIndex = nodeText.indexOf('(');
+    const parenIndex = searchText.indexOf('(');
     if (parenIndex === -1) {
         return null;
     }
 
-    const textBeforeParen = nodeText.substring(0, parenIndex);
+    const textBeforeParen = searchText.substring(0, parenIndex);
     const lines = textBeforeParen.split('\n');
     const lineOffset = lines.length - 1;
 
@@ -168,10 +184,10 @@ function findOpeningParenPosition(
     let finalCol: number;
 
     if (lineOffset === 0) {
-        finalLine = startLine;
-        finalCol = startCol + parenIndex + 1;
+        finalLine = searchStartLine;
+        finalCol = searchStartCol + parenIndex + 1;
     } else {
-        finalLine = startLine + lineOffset;
+        finalLine = searchStartLine + lineOffset;
         finalCol = lines[lines.length - 1].length + 1;
     }
 
