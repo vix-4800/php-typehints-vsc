@@ -40,6 +40,12 @@
     ],
     "main": "./out/extension.js",
     "contributes": {
+        "commands": [
+            {
+                "command": "phpTypeHints.toggleHints",
+                "title": "PHP Type Hints: Toggle Hints"
+            }
+        ],
         "configuration": {
             "title": "PHP Type Hints",
             "properties": {

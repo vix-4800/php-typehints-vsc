@@ -17,7 +17,16 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    context.subscriptions.push(disposable, closeDisposable);
+    const toggleCommand = vscode.commands.registerCommand('phpTypeHints.toggleHints', async () => {
+        const config = vscode.workspace.getConfiguration('phpTypeHints');
+        const currentValue = config.get<boolean>('enabled', true);
+        await config.update('enabled', !currentValue, vscode.ConfigurationTarget.Global);
+
+        const status = !currentValue ? 'enabled' : 'disabled';
+        vscode.window.showInformationMessage(`PHP Type Hints ${status}`);
+    });
+
+    context.subscriptions.push(disposable, closeDisposable, toggleCommand);
 }
 
 export function deactivate() {
