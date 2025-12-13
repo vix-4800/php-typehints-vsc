@@ -1,15 +1,14 @@
 # PHP Type Hints
 
-Display parameter names and return types as inlay hints for PHP, powered by Intelephense.
+Display parameter names and return types as inlay hints for PHP.
 
 ## Features
 
 - **Parameter Hints**: Shows parameter names before arguments in function and method calls
-- **Return Type Hints**: Displays return types for function declarations
+- **Return Type Hints**: Displays inferred return types for functions without explicit type declarations
 - **Smart Detection**: Automatically hides hints for named arguments (PHP 8.0+)
 - **Configurable**: Hide hints when variable names match parameter names
-- **Built-in Function Support**: Works with PHP built-in functions and user-defined functions
-- **Powered by Intelephense**: Uses Intelephense language server for accurate type information
+- **LSP-Powered**: Leverages Language Server Protocol for accurate type information
 
 ## Screenshot
 
