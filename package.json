@@ -3,11 +3,36 @@
     "displayName": "php-typehints-vsc",
     "description": "",
     "version": "0.0.1",
+    "license": "MIT",
+    "publisher": "vix",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/vix-4800/php-typehints-vsc"
+    },
+    "homepage": "https://github.com/vix-4800/php-typehints-vsc",
+    "bugs": {
+        "url": "https://github.com/vix-4800/php-typehints-vsc/issues"
+    },
+    "author": {
+        "name": "Anton VIX",
+        "email": "Gordan.ei@protonmail.ch",
+        "url": "https://github.com/vix-4800"
+    },
     "engines": {
         "vscode": "^1.107.0"
     },
     "categories": [
-        "Other"
+        "Programming Languages"
+    ],
+    "keywords": [
+        "php",
+        "language",
+        "references",
+        "parameter",
+        "symbols",
+        "php extension",
+        "php typehints",
+        "parameter typehints"
     ],
     "activationEvents": [],
     "main": "./out/extension.js",
@@ -19,6 +44,11 @@
             }
         ]
     },
+    "configuration": [
+        {
+            "title": "PHP TypeHints"
+        }
+    ],
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
@@ -36,5 +66,11 @@
         "typescript": "^5.9.3",
         "@vscode/test-cli": "^0.0.12",
         "@vscode/test-electron": "^2.5.2"
-    }
+    },
+    "dependencies": {
+        "php-parser": "^3.2.5"
+    },
+    "extensionDependencies": [
+        "bmewburn.vscode-intelephense-client"
+    ]
 }
