@@ -1,14 +1,22 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { parseFunctionCalls, parseFunctionDeclarations } from '../parser';
+import { parseFunctionCalls, parseFunctionDeclarations, getAstCache } from '../parser';
 
 suite('Parser Test Suite', () => {
+    let docCounter = 0;
+
+    setup(() => {
+        getAstCache().clear();
+        docCounter = 0;
+    });
+
     function createMockDocument(content: string): vscode.TextDocument {
+        const uniqueId = `test-${++docCounter}.php`;
         return {
             getText: () => content,
             lineCount: content.split('\n').length,
-            uri: vscode.Uri.parse('untitled:test.php'),
-            fileName: 'test.php',
+            uri: vscode.Uri.parse(`untitled:${uniqueId}`),
+            fileName: uniqueId,
             languageId: 'php',
             version: 1,
             isDirty: false,
