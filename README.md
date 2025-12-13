@@ -21,7 +21,7 @@ Display parameter names as inlay hints for PHP function calls, powered by Intele
 
 ## Configuration
 
-```json
+```jsonc
 {
     // Enable or disable parameter hints
     "phpParameterHints.enabled": true,
