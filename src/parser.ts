@@ -304,16 +304,50 @@ function extractFunctionDeclarationInfo(
 
     const position = findReturnTypeHintPosition(node, document);
 
-    const namePosition =
-        node.name && typeof node.name === 'object' && node.name.loc
-            ? new vscode.Position(node.name.loc.start.line - 1, node.name.loc.start.column)
-            : funcPosition;
+    let namePosition: vscode.Position;
+
+    if (node.name && typeof node.name === 'object' && node.name.loc) {
+        namePosition = new vscode.Position(
+            node.name.loc.start.line - 1,
+            node.name.loc.start.column
+        );
+    } else if (node.kind === 'closure' || node.kind === 'arrowfunc') {
+        namePosition = findClosureVariableName(node, document, funcPosition);
+    } else {
+        namePosition = funcPosition;
+    }
 
     return {
         position,
         namePosition,
         hasReturnType,
     };
+}
+
+/**
+ * For closures, try to find the variable name in assignment like: $var = function...
+ */
+function findClosureVariableName(
+    node: Function | Method,
+    document: vscode.TextDocument,
+    fallback: vscode.Position
+): vscode.Position {
+    if (!node.loc) {
+        return fallback;
+    }
+
+    const startLine = node.loc.start.line - 1;
+    const lineText = document.lineAt(startLine).text;
+
+    const match = lineText.match(/(\$\w+)\s*=\s*(function|fn)\b/);
+    if (match) {
+        const varStart = lineText.indexOf(match[1]);
+        if (varStart !== -1) {
+            return new vscode.Position(startLine, varStart + 1);
+        }
+    }
+
+    return fallback;
 }
 
 function findReturnTypeHintPosition(
