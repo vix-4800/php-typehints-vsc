@@ -11,10 +11,13 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
         range: vscode.Range,
         token: vscode.CancellationToken
     ): Promise<vscode.InlayHint[]> {
+        console.log('provideInlayHints called for:', document.uri.fsPath);
+
         const config = vscode.workspace.getConfiguration('phpParameterHints');
 
         // Check if hints are enabled
         if (!config.get<boolean>('enabled', true)) {
+            console.log('Hints are disabled in settings');
             return [];
         }
 
@@ -23,6 +26,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
         try {
             // Parse the document to find function calls
             const functionCalls = parseFunctionCalls(document, range);
+            console.log(`Found ${functionCalls.length} function calls`);
 
             // For each function call, get signature information from Intelephense
             for (const call of functionCalls) {
@@ -30,15 +34,31 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                     break;
                 }
 
+                console.log(
+                    `Getting signature help at position: ${call.position.line}:${call.position.character}`
+                );
+
                 // Get signature help from language server (Intelephense)
                 const signatureHelp = await getSignatureHelp(document, call.position);
 
                 if (!signatureHelp || signatureHelp.signatures.length === 0) {
+                    console.log('No signature help received');
                     continue;
                 }
 
+                console.log(`Got signature with ${signatureHelp.signatures.length} signatures`);
+
                 // Get the active signature
                 const signature = signatureHelp.signatures[signatureHelp.activeSignature || 0];
+
+                if (!signature.parameters || signature.parameters.length === 0) {
+                    console.log('No parameters in signature');
+                    continue;
+                }
+
+                console.log(
+                    `Signature has ${signature.parameters.length} parameters, call has ${call.arguments.length} arguments`
+                );
 
                 if (!signature.parameters || signature.parameters.length === 0) {
                     continue;
