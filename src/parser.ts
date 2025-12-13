@@ -217,10 +217,16 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
     }
 
     // Check if this is a named argument (PHP 8.0+)
-    const isNamed = arg.name !== undefined && arg.name !== null;
+    // Named arguments have kind === 'namedargument'
+    const isNamed = arg.kind === 'namedargument';
 
-    // Get the position where the hint should be placed (before the argument value)
-    const position = new vscode.Position(arg.loc.start.line - 1, arg.loc.start.column);
+    // For named arguments, we need the position of the value, not the name
+    let position: vscode.Position;
+    if (isNamed && arg.value && arg.value.loc) {
+        position = new vscode.Position(arg.value.loc.start.line - 1, arg.value.loc.start.column);
+    } else {
+        position = new vscode.Position(arg.loc.start.line - 1, arg.loc.start.column);
+    }
 
     // Extract argument text
     const argRange = new vscode.Range(

@@ -69,6 +69,39 @@ greet("John", "Hi");
 
         assert.ok(calls.length > 0, 'Should find at least one function call');
         assert.strictEqual(calls[0].arguments.length, 2, 'Should have 2 arguments');
+        assert.strictEqual(
+            calls[0].arguments[0].isNamed,
+            false,
+            'String literal should not be named'
+        );
+        assert.strictEqual(
+            calls[0].arguments[1].isNamed,
+            false,
+            'String literal should not be named'
+        );
+    });
+
+    test('Should NOT mark variable arguments as named', () => {
+        const content = `<?php
+greet($name, $greeting);
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const calls = parseFunctionCalls(doc, range);
+
+        assert.ok(calls.length > 0, 'Should find function call');
+        assert.strictEqual(calls[0].arguments.length, 2, 'Should have 2 arguments');
+        assert.strictEqual(
+            calls[0].arguments[0].isNamed,
+            false,
+            'Variable should NOT be marked as named argument'
+        );
+        assert.strictEqual(
+            calls[0].arguments[1].isNamed,
+            false,
+            'Variable should NOT be marked as named argument'
+        );
     });
 
     test('Should detect named arguments', () => {
