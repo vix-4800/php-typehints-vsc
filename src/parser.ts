@@ -267,7 +267,12 @@ export function parseFunctionDeclarations(
         }
 
         traverseNode(ast, (node: Node) => {
-            if (node.kind === 'function' || node.kind === 'method') {
+            if (
+                node.kind === 'function' ||
+                node.kind === 'method' ||
+                node.kind === 'arrowfunc' ||
+                node.kind === 'closure'
+            ) {
                 const funcNode = node as Function | Method;
                 const declInfo = extractFunctionDeclarationInfo(funcNode, document, range);
                 if (declInfo) {
@@ -287,7 +292,7 @@ function extractFunctionDeclarationInfo(
     document: vscode.TextDocument,
     range: vscode.Range
 ): FunctionDeclarationInfo | null {
-    if (!node.loc || !node.name) {
+    if (!node.loc) {
         return null;
     }
 
@@ -296,11 +301,16 @@ function extractFunctionDeclarationInfo(
         return null;
     }
 
-    const name = typeof node.name === 'string' ? node.name : node.name.name;
+    const name = node.name
+        ? typeof node.name === 'string'
+            ? node.name
+            : node.name.name
+        : '<anonymous>';
+
     const hasReturnType = node.type !== null && node.type !== undefined;
 
     const namePosition =
-        typeof node.name === 'object' && node.name.loc
+        node.name && typeof node.name === 'object' && node.name.loc
             ? new vscode.Position(node.name.loc.start.line - 1, node.name.loc.start.column)
             : funcPosition;
 
