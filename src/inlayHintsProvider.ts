@@ -41,7 +41,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
         config: vscode.WorkspaceConfiguration
     ): Promise<vscode.InlayHint[]> {
         const hints: vscode.InlayHint[] = [];
-        const functionCalls = parseFunctionCalls(document, range);
+        const functionCalls = parseFunctionCalls(document, range, token);
 
         for (const call of functionCalls) {
             if (token.isCancellationRequested) {
@@ -101,7 +101,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
         token: vscode.CancellationToken
     ): Promise<vscode.InlayHint[]> {
         const hints: vscode.InlayHint[] = [];
-        const declarations = parseFunctionDeclarations(document, range);
+        const declarations = parseFunctionDeclarations(document, range, token);
 
         for (const decl of declarations) {
             if (token.isCancellationRequested) {

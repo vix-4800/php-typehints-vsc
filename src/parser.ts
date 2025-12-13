@@ -1,5 +1,15 @@
 import * as vscode from 'vscode';
-import { Engine, Node, Program, Call, New, Function, Method, Closure } from 'php-parser';
+import { Node, Program, Call, New, Function, Method } from 'php-parser';
+import { AstCache } from './astCache.js';
+
+const astCache = new AstCache(50);
+
+/**
+ * Get the AST cache instance for external management
+ */
+export function getAstCache(): AstCache {
+    return astCache;
+}
 
 export interface ArgumentInfo {
     position: vscode.Position;
@@ -20,27 +30,22 @@ export interface FunctionDeclarationInfo {
 
 export function parseFunctionCalls(
     document: vscode.TextDocument,
-    range: vscode.Range
+    range: vscode.Range,
+    token?: vscode.CancellationToken
 ): FunctionCallInfo[] {
     const calls: FunctionCallInfo[] = [];
 
-    try {
-        const text = document.getText();
-        const parser = new Engine({
-            parser: {
-                extractDoc: false,
-                php7: true,
-                php8: true,
-            },
-            ast: {
-                withPositions: true,
-            },
-        });
+    if (token?.isCancellationRequested) {
+        return calls;
+    }
 
-        let ast: Program;
-        try {
-            ast = parser.parseCode(text, 'document.php');
-        } catch {
+    try {
+        const ast = astCache.getAst(document);
+        if (!ast) {
+            return calls;
+        }
+
+        if (token?.isCancellationRequested) {
             return calls;
         }
 
@@ -265,27 +270,22 @@ function traverseNode(node: any, visitor: (node: Node) => void): void {
 
 export function parseFunctionDeclarations(
     document: vscode.TextDocument,
-    range: vscode.Range
+    range: vscode.Range,
+    token?: vscode.CancellationToken
 ): FunctionDeclarationInfo[] {
     const declarations: FunctionDeclarationInfo[] = [];
 
-    try {
-        const text = document.getText();
-        const parser = new Engine({
-            parser: {
-                extractDoc: false,
-                php7: true,
-                php8: true,
-            },
-            ast: {
-                withPositions: true,
-            },
-        });
+    if (token?.isCancellationRequested) {
+        return declarations;
+    }
 
-        let ast: Program;
-        try {
-            ast = parser.parseCode(text, 'document.php');
-        } catch {
+    try {
+        const ast = astCache.getAst(document);
+        if (!ast) {
+            return declarations;
+        }
+
+        if (token?.isCancellationRequested) {
             return declarations;
         }
 
