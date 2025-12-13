@@ -1,11 +1,13 @@
 <?php
 
 /**
- * Test fixture specifically for return type hints
+ * Return Type Hints
+ *
+ * Tests inlay hints for function return types
  */
 
 // ============================================================================
-// BASIC RETURN TYPES
+// BASIC SCALAR RETURN TYPES
 // ============================================================================
 
 // Expected: : void
@@ -57,6 +59,17 @@ function getNullableInt(): ?int {
     return null;
 }
 
+// Expected: : ?User
+function findUser(int $id): ?User {
+    return $id > 0 ? new User("John") : null;
+}
+
+// Alternative nullable syntax (PHP 8.0+)
+// Expected: : string|null
+function getName(): string|null {
+    return "John";
+}
+
 // ============================================================================
 // CLASS/INTERFACE TYPES
 // ============================================================================
@@ -78,17 +91,45 @@ function getRepository(): Repository {
 }
 
 // ============================================================================
+// SELF/STATIC/PARENT TYPES
+// ============================================================================
+
+class Builder {
+    // Expected: : self
+    public function build(): self {
+        return $this;
+    }
+
+    // Expected: : self
+    public function reset(): self {
+        return $this;
+    }
+}
+
+class Factory {
+    // Expected: : static
+    public static function create(): static {
+        return new static();
+    }
+
+    // Expected: : static
+    public static function instance(): static {
+        return new static();
+    }
+}
+
+// ============================================================================
 // UNION TYPES (PHP 8.0+)
 // ============================================================================
 
 // Expected: : int|float
-function getNumber2(): int|float {
+function getNumeric(): int|float {
     return 42;
 }
 
-// Expected: : string|null
-function getName(): string|null {
-    return "John";
+// Expected: : string|int
+function getId(bool $asString): string|int {
+    return $asString ? "123" : 123;
 }
 
 // Expected: : array|false
@@ -96,32 +137,37 @@ function getData(): array|false {
     return [];
 }
 
-// ============================================================================
-// SPECIAL TYPES
-// ============================================================================
-
-// Expected: : self
-class Builder {
-    public function build(): self {
-        return $this;
-    }
+// Expected: : int|string|bool
+function getValue(): int|string|bool {
+    return true;
 }
 
-// Expected: : static
-class Factory {
-    public static function create(): static {
-        return new static();
-    }
-}
+// ============================================================================
+// MIXED TYPE (PHP 8.0+)
+// ============================================================================
 
 // Expected: : mixed
 function getAny(): mixed {
     return 123;
 }
 
+// Expected: : mixed
+function processValue(string $key): mixed {
+    return $_SESSION[$key] ?? null;
+}
+
+// ============================================================================
+// NEVER TYPE (PHP 8.1+)
+// ============================================================================
+
 // Expected: : never
 function fail(): never {
     throw new Exception("Error");
+}
+
+// Expected: : never
+function terminate(string $message): never {
+    die($message);
 }
 
 // ============================================================================
@@ -134,8 +180,30 @@ $double = fn(int $x): int => $x * 2;
 // Expected: : string
 $format = fn(string $name): string => "Hello, $name";
 
+// Expected: : bool
+$isPositive = fn(int $n): bool => $n > 0;
+
 // ============================================================================
-// CLASS METHODS WITH RETURN TYPES
+// CLOSURES/ANONYMOUS FUNCTIONS
+// ============================================================================
+
+// Expected: : int
+$sum = function(int $a, int $b): int {
+    return $a + $b;
+};
+
+// Expected: : void
+$log = function(string $msg): void {
+    echo $msg;
+};
+
+// Expected: : ?string
+$find = function(array $items, string $key): ?string {
+    return $items[$key] ?? null;
+};
+
+// ============================================================================
+// CLASS METHODS
 // ============================================================================
 
 class Calculator {
@@ -150,29 +218,26 @@ class Calculator {
     }
 
     // Expected: : self
-    public function reset(): self {
+    public function instance(): self {
         return $this;
     }
 
     // Expected: : static
-    public static function instance(): static {
+    public static function create(): static {
         return new static();
     }
 }
 
 // ============================================================================
-// ANONYMOUS FUNCTIONS
+// GENERATOR FUNCTIONS
 // ============================================================================
 
-// Expected: : int
-$sum = function(int $a, int $b): int {
-    return $a + $b;
-};
-
-// Expected: : void
-$log = function(string $msg): void {
-    echo $msg;
-};
+// Expected: : \Generator
+function generateNumbers(int $start, int $end): \Generator {
+    for ($i = $start; $i <= $end; $i++) {
+        yield $i;
+    }
+}
 
 // ============================================================================
 // NO RETURN TYPE - NO HINT EXPECTED
@@ -184,4 +249,8 @@ function noReturnType($value) {
 
 function alsoNoReturnType(string $name) {
     echo $name;
+}
+
+function implicitVoid() {
+    // no return statement
 }
