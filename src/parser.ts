@@ -94,8 +94,12 @@ function extractCallInfo(
         return null;
     }
 
-    // Position for signature help (right after the opening parenthesis)
-    const position = new vscode.Position(node.loc.start.line - 1, node.loc.start.column + 1);
+    // Find the position of the opening parenthesis
+    // We need to search for '(' after the function name
+    const signatureHelpPosition = findOpeningParenPosition(node, document);
+    if (!signatureHelpPosition) {
+        return null;
+    }
 
     const args: ArgumentInfo[] = [];
 
@@ -108,7 +112,7 @@ function extractCallInfo(
     }
 
     return {
-        position,
+        position: signatureHelpPosition,
         arguments: args,
     };
 }
@@ -131,8 +135,11 @@ function extractNewInfo(
         return null;
     }
 
-    // Position for signature help
-    const position = new vscode.Position(node.loc.start.line - 1, node.loc.start.column + 1);
+    // Find the position of the opening parenthesis for constructor
+    const signatureHelpPosition = findOpeningParenPosition(node, document);
+    if (!signatureHelpPosition) {
+        return null;
+    }
 
     const args: ArgumentInfo[] = [];
 
@@ -144,9 +151,61 @@ function extractNewInfo(
     }
 
     return {
-        position,
+        position: signatureHelpPosition,
         arguments: args,
     };
+}
+
+/**
+ * Find the position right after the opening parenthesis of a function/constructor call
+ */
+function findOpeningParenPosition(
+    node: Call | New,
+    document: vscode.TextDocument
+): vscode.Position | null {
+    if (!node.loc) {
+        return null;
+    }
+
+    // Get the text from the start of the node to a reasonable length
+    const startLine = node.loc.start.line - 1;
+    const startCol = node.loc.start.column;
+    const endLine = node.loc.end.line - 1;
+    const endCol = node.loc.end.column;
+
+    // Get the entire call text
+    const nodeRange = new vscode.Range(
+        new vscode.Position(startLine, startCol),
+        new vscode.Position(endLine, endCol)
+    );
+    const nodeText = document.getText(nodeRange);
+
+    // Find the first opening parenthesis
+    const parenIndex = nodeText.indexOf('(');
+    if (parenIndex === -1) {
+        return null;
+    }
+
+    // Calculate the position right after the '('
+    // Count newlines before the paren to find the correct line
+    const textBeforeParen = nodeText.substring(0, parenIndex);
+    const lines = textBeforeParen.split('\n');
+    const lineOffset = lines.length - 1;
+
+    let finalLine: number;
+    let finalCol: number;
+
+    if (lineOffset === 0) {
+        // Same line
+        finalLine = startLine;
+        finalCol = startCol + parenIndex + 1; // +1 to be after '('
+    } else {
+        // Different line
+        finalLine = startLine + lineOffset;
+        finalCol = lines[lines.length - 1].length + 1; // +1 to be after '('
+    }
+
+    return new vscode.Position(finalLine, finalCol);
 }
 
 /**
