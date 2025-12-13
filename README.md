@@ -54,12 +54,6 @@ npm run compile
 npm test
 ```
 
-### Development Mode
-
-```bash
-npm run dev
-```
-
 ### Create VSIX Package
 
 ```bash
