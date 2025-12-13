@@ -111,7 +111,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                 continue;
             }
 
-            const returnType = await this.getReturnTypeFromHover(document, decl.namePosition);
+            const returnType = decl.inferredReturnType;
             if (!returnType) {
                 continue;
             }
@@ -127,59 +127,6 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
         }
 
         return hints;
-    }
-
-    private async getReturnTypeFromHover(
-        document: vscode.TextDocument,
-        position: vscode.Position
-    ): Promise<string | null> {
-        try {
-            const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
-                'vscode.executeHoverProvider',
-                document.uri,
-                position
-            );
-
-            if (!hovers || hovers.length === 0) {
-                return null;
-            }
-
-            for (const hover of hovers) {
-                for (const content of hover.contents) {
-                    const text =
-                        content instanceof vscode.MarkdownString ? content.value : String(content);
-
-                    const returnType = this.extractReturnTypeFromHover(text);
-                    if (returnType) {
-                        return returnType;
-                    }
-                }
-            }
-
-            return null;
-        } catch {
-            return null;
-        }
-    }
-
-    private extractReturnTypeFromHover(hoverText: string): string | null {
-        const patterns = [
-            /function\s+\w+\s*\([^)]*\)\s*:\s*([^\s{]+)/,
-            /\):\s*([^\s{]+)/,
-            /@return\s+(\S+)/,
-        ];
-
-        for (const pattern of patterns) {
-            const match = hoverText.match(pattern);
-            if (match && match[1]) {
-                const type = match[1].replace(/```.*$/, '').trim();
-                if (type && type !== 'void' && !type.includes('`')) {
-                    return type;
-                }
-            }
-        }
-
-        return null;
     }
 
     private extractParameterName(

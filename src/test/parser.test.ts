@@ -3,7 +3,6 @@ import * as vscode from 'vscode';
 import { parseFunctionCalls, parseFunctionDeclarations } from '../parser';
 
 suite('Parser Test Suite', () => {
-
     function createMockDocument(content: string): vscode.TextDocument {
         return {
             getText: () => content,
@@ -444,5 +443,237 @@ function broken(: string {
         const declarations = parseFunctionDeclarations(doc, range);
 
         assert.ok(Array.isArray(declarations), 'Should return an array');
+    });
+
+    test('Should infer return type from PHPDoc @return', () => {
+        const content = `<?php
+/**
+ * @return string
+ */
+function getStringFromDoc() {
+    return "hello";
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].hasReturnType,
+            false,
+            'Function should not have explicit return type'
+        );
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'string',
+            'Should infer string type from PHPDoc'
+        );
+    });
+
+    test('Should infer complex return type from PHPDoc', () => {
+        const content = `<?php
+/**
+ * Gets a user by ID
+ * @param int $id User ID
+ * @return User|null
+ */
+function findUser($id) {
+    return $id > 0 ? new User("John") : null;
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'User|null',
+            'Should infer union type from PHPDoc'
+        );
+    });
+
+    test('Should infer string type from string literal return', () => {
+        const content = `<?php
+function getString() {
+    return "hello";
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'string',
+            'Should infer string type from literal'
+        );
+    });
+
+    test('Should infer int type from integer literal return', () => {
+        const content = `<?php
+function getNumber() {
+    return 42;
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'int',
+            'Should infer int type from literal'
+        );
+    });
+
+    test('Should infer float type from float literal return', () => {
+        const content = `<?php
+function getFloat() {
+    return 3.14;
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'float',
+            'Should infer float type from literal'
+        );
+    });
+
+    test('Should infer bool type from boolean literal return', () => {
+        const content = `<?php
+function getBool() {
+    return true;
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'bool',
+            'Should infer bool type from literal'
+        );
+    });
+
+    test('Should infer array type from array literal return', () => {
+        const content = `<?php
+function getArray() {
+    return [1, 2, 3];
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'array',
+            'Should infer array type from literal'
+        );
+    });
+
+    test('Should NOT infer type when returning variable', () => {
+        const content = `<?php
+function noReturnType($value) {
+    return $value;
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            null,
+            'Should not infer type from variable'
+        );
+    });
+
+    test('Should NOT infer type when multiple return types exist', () => {
+        const content = `<?php
+function maybeString($flag) {
+    if ($flag) {
+        return "yes";
+    }
+    return null;
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            null,
+            'Should not infer type when multiple types returned'
+        );
+    });
+
+    test('Should NOT have inferred type when explicit type exists', () => {
+        const content = `<?php
+function alreadyTyped(): string {
+    return "typed";
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 10, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].hasReturnType,
+            true,
+            'Function should have explicit return type'
+        );
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            null,
+            'Should not infer type when explicit exists'
+        );
+    });
+
+    test('Should infer return type for class method with PHPDoc', () => {
+        const content = `<?php
+class Calculator {
+    /**
+     * @return int
+     */
+    public function add($a, $b) {
+        return $a + $b;
+    }
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        const method = declarations.find((d) => d.name === 'add');
+        assert.ok(method, 'Should find add method');
+        assert.strictEqual(method!.inferredReturnType, 'int', 'Should infer int type from PHPDoc');
     });
 });

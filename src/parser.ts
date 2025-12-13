@@ -17,6 +17,7 @@ export interface FunctionDeclarationInfo {
     namePosition: vscode.Position;
     returnTypePosition: vscode.Position;
     hasReturnType: boolean;
+    inferredReturnType: string | null;
 }
 
 export function parseFunctionCalls(
@@ -250,7 +251,7 @@ export function parseFunctionDeclarations(
         const text = document.getText();
         const parser = new Engine({
             parser: {
-                extractDoc: false,
+                extractDoc: true,
                 php7: true,
                 php8: true,
             },
@@ -316,11 +317,20 @@ function extractFunctionDeclarationInfo(
 
     const returnTypePosition = findReturnTypePosition(node, document);
 
+    let inferredReturnType: string | null = null;
+    if (!hasReturnType) {
+        inferredReturnType = extractReturnTypeFromPhpDoc(node);
+        if (!inferredReturnType) {
+            inferredReturnType = inferReturnTypeFromStatements(node);
+        }
+    }
+
     return {
         name,
         namePosition,
         returnTypePosition,
         hasReturnType,
+        inferredReturnType,
     };
 }
 
@@ -358,5 +368,110 @@ function findReturnTypePosition(
         return new vscode.Position(startLine, startCol + parenIndex + 1);
     } else {
         return new vscode.Position(startLine + lineOffset, lines[lines.length - 1].length);
+    }
+}
+
+/**
+ * Extract return type from PHPDoc @return tag
+ */
+function extractReturnTypeFromPhpDoc(node: Function | Method): string | null {
+    const nodeAny = node as any;
+    const leadingComments = nodeAny.leadingComments;
+
+    if (!leadingComments || !Array.isArray(leadingComments)) {
+        return null;
+    }
+
+    for (const comment of leadingComments) {
+        if (comment.kind === 'commentblock' || comment.value?.includes('/**')) {
+            const text = comment.value || '';
+            const match = text.match(/@return\s+([^\s*]+)/);
+            if (match && match[1]) {
+                return match[1];
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Infer return type from return statements (only simple literals)
+ */
+function inferReturnTypeFromStatements(node: Function | Method): string | null {
+    const returnTypes: Set<string> = new Set();
+
+    if (node.kind === 'arrowfunc') {
+        const arrowNode = node as any;
+        if (arrowNode.body) {
+            const type = inferTypeFromExpression(arrowNode.body);
+            if (type) {
+                return type;
+            }
+        }
+        return null;
+    }
+
+    if (!node.body) {
+        return null;
+    }
+
+    traverseNode(node.body, (childNode: Node) => {
+        if (childNode.kind === 'return') {
+            const returnNode = childNode as any;
+            if (returnNode.expr) {
+                const type = inferTypeFromExpression(returnNode.expr);
+                if (type) {
+                    returnTypes.add(type);
+                }
+            }
+        }
+    });
+
+    if (returnTypes.size === 1) {
+        return Array.from(returnTypes)[0];
+    }
+
+    return null;
+}
+
+/**
+ * Infer type from a simple expression (literals only)
+ */
+function inferTypeFromExpression(expr: any): string | null {
+    if (!expr || !expr.kind) {
+        return null;
+    }
+
+    switch (expr.kind) {
+        case 'string':
+        case 'encapsed':
+            return 'string';
+
+        case 'number':
+            if (typeof expr.value === 'string') {
+                return expr.value.includes('.') ? 'float' : 'int';
+            }
+            return typeof expr.value === 'number' && !Number.isInteger(expr.value)
+                ? 'float'
+                : 'int';
+
+        case 'boolean':
+            return 'bool';
+
+        case 'array':
+            return 'array';
+
+        case 'nullkeyword':
+            return 'null';
+
+        case 'new':
+            if (expr.what && expr.what.kind === 'name') {
+                return expr.what.name;
+            }
+            return 'object';
+
+        default:
+            return null;
     }
 }
