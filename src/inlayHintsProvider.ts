@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { parseFunctionCalls, parseFunctionDeclarations } from './parser.js';
 import { getSignatureHelp } from './signatureHelper.js';
+import { getReturnTypeAtPosition } from './typeHelper.js';
 
 export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
     async provideInlayHints(
@@ -111,13 +112,13 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                 continue;
             }
 
-            const returnType = decl.inferredReturnType;
+            const returnType = await getReturnTypeAtPosition(document, decl.position);
             if (!returnType) {
                 continue;
             }
 
             const hint = new vscode.InlayHint(
-                decl.returnTypePosition,
+                decl.position,
                 `: ${returnType}`,
                 vscode.InlayHintKind.Type
             );

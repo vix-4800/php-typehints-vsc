@@ -718,7 +718,7 @@ function earlyReturn($flag) {
         );
     });
 
-    test('Should parse complex PHPDoc types with generics', () => {
+    test('Should normalize Generator generic to plain Generator', () => {
         const content = `<?php
 /**
  * @return \\Generator<int, string>
@@ -735,12 +735,12 @@ function generateStrings() {
         assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
         assert.strictEqual(
             declarations[0].inferredReturnType,
-            '\\Generator<int, string>',
-            'Should parse full generic type from PHPDoc'
+            '\\Generator',
+            'Should normalize Generator<int, string> to Generator'
         );
     });
 
-    test('Should parse complex PHPDoc types with array shapes', () => {
+    test('Should normalize array shape to plain array', () => {
         const content = `<?php
 /**
  * @return array{name: string, age: int}
@@ -757,12 +757,12 @@ function getPerson() {
         assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
         assert.strictEqual(
             declarations[0].inferredReturnType,
-            'array{name: string, age: int}',
-            'Should parse full array shape from PHPDoc'
+            'array',
+            'Should normalize array{...} to array'
         );
     });
 
-    test('Should parse callable PHPDoc type', () => {
+    test('Should normalize callable signature to plain callable', () => {
         const content = `<?php
 /**
  * @return callable(int): string
@@ -780,8 +780,96 @@ function getFormatter() {
         assert.ok(formatter, 'Should find getFormatter function');
         assert.strictEqual(
             formatter!.inferredReturnType,
-            'callable(int): string',
-            'Should parse callable type from PHPDoc'
+            'callable',
+            'Should normalize callable(...) to callable'
+        );
+    });
+
+    test('Should normalize string[] to array', () => {
+        const content = `<?php
+/**
+ * @return string[]
+ */
+function getNames() {
+    return ["Alice", "Bob"];
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'array',
+            'Should normalize string[] to array'
+        );
+    });
+
+    test('Should normalize class-string to string', () => {
+        const content = `<?php
+/**
+ * @return class-string<User>
+ */
+function getUserClass() {
+    return User::class;
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'string',
+            'Should normalize class-string<T> to string'
+        );
+    });
+
+    test('Should normalize integer to int', () => {
+        const content = `<?php
+/**
+ * @return integer
+ */
+function getCount() {
+    return 42;
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'int',
+            'Should normalize integer to int'
+        );
+    });
+
+    test('Should normalize union with generics', () => {
+        const content = `<?php
+/**
+ * @return array<string>|null
+ */
+function maybeGetNames() {
+    return null;
+}
+`;
+        const doc = createMockDocument(content);
+        const range = new vscode.Range(0, 0, 15, 0);
+
+        const declarations = parseFunctionDeclarations(doc, range);
+
+        assert.strictEqual(declarations.length, 1, 'Should find one function declaration');
+        assert.strictEqual(
+            declarations[0].inferredReturnType,
+            'array|null',
+            'Should normalize array<string>|null to array|null'
         );
     });
 });
