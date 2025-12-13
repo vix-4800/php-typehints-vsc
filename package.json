@@ -34,21 +34,32 @@
         "php typehints",
         "parameter typehints"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "onLanguage:php"
+    ],
     "main": "./out/extension.js",
     "contributes": {
-        "commands": [
-            {
-                "command": "php-typehints-vsc.helloWorld",
-                "title": "Hello World"
+        "configuration": {
+            "title": "PHP Parameter Hints",
+            "properties": {
+                "phpParameterHints.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable/disable PHP parameter hints"
+                },
+                "phpParameterHints.hideWhenArgumentMatchesName": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Hide hint when variable name matches parameter name (e.g., setUser($user))"
+                },
+                "phpParameterHints.showForBuiltInFunctions": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show hints for built-in PHP functions"
+                }
             }
-        ]
-    },
-    "configuration": [
-        {
-            "title": "PHP TypeHints"
         }
-    ],
+    },
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
