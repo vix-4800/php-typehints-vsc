@@ -2,6 +2,7 @@
     "name": "php-typehints-vsc",
     "displayName": "PHP Type Hints",
     "description": "Display parameter names and return types as inlay hints for PHP",
+    "icon": "icon.png",
     "version": "0.1.0",
     "license": "MIT",
     "publisher": "vix",
