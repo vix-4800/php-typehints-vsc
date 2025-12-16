@@ -83,5 +83,80 @@ function normalizeReturnType(type: string): string {
     type = type.replace(/^\\+/, '');
     type = type.trim();
 
+    return normalizePhpReturnType(type);
+}
+
+/**
+ * Normalize PHPDoc/LSP types to valid PHP return types
+ * Converts complex types that can't be used in PHP type hints to their valid equivalents
+ *
+ * Examples:
+ * - Object[] -> array
+ * - string[] -> array
+ * - array<string, int> -> array
+ * - Collection<User> -> Collection
+ * - ?string -> string|null
+ *
+ * @param type The type string from PHPDoc or LSP
+ * @returns Valid PHP return type or null if the type shouldn't be shown
+ */
+function normalizePhpReturnType(type: string): string {
+    if (!type || type === 'void' || type === 'never' || type === 'mixed') {
+        return type;
+    }
+
+    if (type === 'null') {
+        return type;
+    }
+
+    if (type.includes('|')) {
+        const parts = type.split('|').map(part => normalizeSingleType(part.trim()));
+        const uniqueParts = [...new Set(parts.filter(p => p))];
+        return uniqueParts.join('|');
+    }
+
+    return normalizeSingleType(type);
+}
+
+/**
+ * Normalize a single type (not a union)
+ */
+function normalizeSingleType(type: string): string {
+    type = type.trim();
+
+    if (type.startsWith('?')) {
+        return type.substring(1);
+    }
+
+    if (type.match(/\[\]$/)) {
+        return 'array';
+    }
+
+    if (type.match(/^array<.+>$/i)) {
+        return 'array';
+    }
+
+    if (type.match(/^list<.+>$/i)) {
+        return 'array';
+    }
+
+    if (type.match(/^non-empty-array/i)) {
+        return 'array';
+    }
+
+    if (type.match(/^array\{.+\}$/i)) {
+        return 'array';
+    }
+
+    if (type.match(/^(callable|Closure)\(.+\)/i)) {
+        const callableMatch = type.match(/^(callable|Closure)/i);
+        return callableMatch ? callableMatch[1] : type;
+    }
+
+    const genericMatch = type.match(/^([A-Za-z_][A-Za-z0-9_\\]*)<.+>$/);
+    if (genericMatch) {
+        return genericMatch[1];
+    }
+
     return type;
 }

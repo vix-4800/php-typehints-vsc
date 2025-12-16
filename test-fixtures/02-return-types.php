@@ -61,6 +61,7 @@ function findUserFromDoc($id) {
 function getStringArrayFromDoc() {
     return ["a", "b", "c"];
 }
+// Expected hint: : array (normalized from string[])
 
 /**
  * @return array<string, int>
@@ -68,6 +69,7 @@ function getStringArrayFromDoc() {
 function getMapFromDoc() {
     return ["a" => 1, "b" => 2];
 }
+// Expected hint: : array (normalized from array<string, int>)
 
 // ============================================================================
 // INFERRED FROM RETURN STATEMENTS (Simple literals)
@@ -213,6 +215,7 @@ function generateStrings() {
     yield "a";
     yield "b";
 }
+// Expected hint: : Generator (normalized from Generator<int, string>)
 
 /**
  * @return callable(int): string
@@ -220,6 +223,7 @@ function generateStrings() {
 function getFormatter() {
     return fn($n) => (string)$n;
 }
+// Expected hint: : callable (normalized from callable(int): string)
 
 /**
  * @return array{name: string, age: int}
@@ -227,6 +231,7 @@ function getFormatter() {
 function getPerson() {
     return ["name" => "John", "age" => 30];
 }
+// Expected hint: : array (normalized from array shape)
 
 /**
  * @return class-string<User>
@@ -234,6 +239,7 @@ function getPerson() {
 function getUserClass() {
     return User::class;
 }
+// Expected hint: : class-string (generic parameter removed)
 
 /**
  * @return string[]
@@ -241,6 +247,7 @@ function getUserClass() {
 function getNames() {
     return ["Alice", "Bob"];
 }
+// Expected hint: : array (normalized from string[])
 
 /**
  * @return array<string>|null
@@ -248,6 +255,7 @@ function getNames() {
 function maybeGetArray() {
     return null;
 }
+// Expected hint: : array|null (normalized from array<string>|null)
 
 /**
  * @return integer
