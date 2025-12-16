@@ -123,15 +123,15 @@ function normalizePhpReturnType(type: string): string {
 }
 
 /**
- * Check if type has union (|) at the top level, ignoring unions inside <> or ()
+ * Check if type has union (|) at the top level, ignoring unions inside <>, (), or {}
  */
 function hasTopLevelUnion(type: string): boolean {
     let depth = 0;
     for (let i = 0; i < type.length; i++) {
         const char = type[i];
-        if (char === '<' || char === '(') {
+        if (char === '<' || char === '(' || char === '{') {
             depth++;
-        } else if (char === '>' || char === ')') {
+        } else if (char === '>' || char === ')' || char === '}') {
             depth--;
         } else if (char === '|' && depth === 0) {
             return true;
@@ -141,7 +141,7 @@ function hasTopLevelUnion(type: string): boolean {
 }
 
 /**
- * Split type by top-level union (|), ignoring unions inside <> or ()
+ * Split type by top-level union (|), ignoring unions inside <>, (), or {}
  */
 function splitTopLevelUnion(type: string): string[] {
     const parts: string[] = [];
@@ -150,10 +150,10 @@ function splitTopLevelUnion(type: string): string[] {
 
     for (let i = 0; i < type.length; i++) {
         const char = type[i];
-        if (char === '<' || char === '(') {
+        if (char === '<' || char === '(' || char === '{') {
             depth++;
             current += char;
-        } else if (char === '>' || char === ')') {
+        } else if (char === '>' || char === ')' || char === '}') {
             depth--;
             current += char;
         } else if (char === '|' && depth === 0) {

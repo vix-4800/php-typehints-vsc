@@ -31,9 +31,9 @@ function hasTopLevelUnion(type: string): boolean {
     let depth = 0;
     for (let i = 0; i < type.length; i++) {
         const char = type[i];
-        if (char === '<' || char === '(') {
+        if (char === '<' || char === '(' || char === '{') {
             depth++;
-        } else if (char === '>' || char === ')') {
+        } else if (char === '>' || char === ')' || char === '}') {
             depth--;
         } else if (char === '|' && depth === 0) {
             return true;
@@ -49,10 +49,10 @@ function splitTopLevelUnion(type: string): string[] {
 
     for (let i = 0; i < type.length; i++) {
         const char = type[i];
-        if (char === '<' || char === '(') {
+        if (char === '<' || char === '(' || char === '{') {
             depth++;
             current += char;
-        } else if (char === '>' || char === ')') {
+        } else if (char === '>' || char === ')' || char === '}') {
             depth--;
             current += char;
         } else if (char === '|' && depth === 0) {
