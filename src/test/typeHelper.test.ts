@@ -18,13 +18,56 @@ function normalizePhpReturnType(type: string): string {
         return `${innerType}|null`;
     }
 
-    if (type.includes('|')) {
-        const parts = type.split('|').map(part => normalizeSingleType(part.trim()));
+    if (hasTopLevelUnion(type)) {
+        const parts = splitTopLevelUnion(type).map(part => normalizeSingleType(part.trim()));
         const uniqueParts = [...new Set(parts.filter(p => p))];
         return uniqueParts.join('|');
     }
 
     return normalizeSingleType(type);
+}
+
+function hasTopLevelUnion(type: string): boolean {
+    let depth = 0;
+    for (let i = 0; i < type.length; i++) {
+        const char = type[i];
+        if (char === '<' || char === '(') {
+            depth++;
+        } else if (char === '>' || char === ')') {
+            depth--;
+        } else if (char === '|' && depth === 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function splitTopLevelUnion(type: string): string[] {
+    const parts: string[] = [];
+    let current = '';
+    let depth = 0;
+
+    for (let i = 0; i < type.length; i++) {
+        const char = type[i];
+        if (char === '<' || char === '(') {
+            depth++;
+            current += char;
+        } else if (char === '>' || char === ')') {
+            depth--;
+            current += char;
+        } else if (char === '|' && depth === 0) {
+            parts.push(current);
+            current = '';
+        } else {
+            current += char;
+        }
+    }
+
+    if (current) {
+        parts.push(current);
+    }
+
+    return parts;
 }
 
 function normalizeSingleType(type: string): string {
@@ -38,7 +81,7 @@ function normalizeSingleType(type: string): string {
         return 'array';
     }
 
-    if (type.match(/^array<.+>$/i)) {
+    if (type.toLowerCase().startsWith('array<') && type.endsWith('>')) {
         return 'array';
     }
 
