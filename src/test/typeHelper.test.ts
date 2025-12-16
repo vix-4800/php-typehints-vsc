@@ -270,6 +270,58 @@ suite('Type normalization for PHP return types', () => {
         test('Should handle union with multiple array notations', () => {
             assert.strictEqual(normalizePhpReturnType('string[]|array<int>|list<bool>'), 'array');
         });
+
+        test('Should handle types with extra whitespace', () => {
+            assert.strictEqual(normalizePhpReturnType('  string  '), 'string');
+            assert.strictEqual(normalizePhpReturnType('string | int'), 'string|int');
+        });
+
+        test('Should handle deeply nested generics', () => {
+            assert.strictEqual(normalizePhpReturnType('Collection<Collection<Collection<User>>>'), 'Collection');
+            assert.strictEqual(normalizePhpReturnType('array<array<array<string>>>'), 'array');
+        });
+
+        test('Should handle mixed case in array types', () => {
+            assert.strictEqual(normalizePhpReturnType('Array<String>'), 'array');
+            assert.strictEqual(normalizePhpReturnType('LIST<int>'), 'array');
+            assert.strictEqual(normalizePhpReturnType('Non-Empty-Array<string>'), 'array');
+        });
+
+        test('Should handle intersection types in union (treated as-is for now)', () => {
+            // PHP 8.1+ supports intersection types with &, but they're rare in return types
+            assert.strictEqual(normalizePhpReturnType('Countable&Iterator'), 'Countable&Iterator');
+            assert.strictEqual(normalizePhpReturnType('(Countable&Iterator)|null'), '(Countable&Iterator)|null');
+        });
+
+        test('Should handle multiple consecutive pipes (malformed input)', () => {
+            assert.strictEqual(normalizePhpReturnType('string||int'), 'string|int');
+            assert.strictEqual(normalizePhpReturnType('array|||null'), 'array|null');
+        });
+
+        test('Should handle union with all parts being same after normalization', () => {
+            assert.strictEqual(normalizePhpReturnType('string[]|int[]|bool[]'), 'array');
+            assert.strictEqual(normalizePhpReturnType('Collection<User>|Collection<Post>'), 'Collection');
+        });
+
+        test('Should preserve union order and normalize each part', () => {
+            assert.strictEqual(normalizePhpReturnType('User|string[]|null'), 'User|array|null');
+            assert.strictEqual(normalizePhpReturnType('false|array<int>|true'), 'false|array|true');
+        });
+
+        test('Should handle callable with complex return type in signature', () => {
+            assert.strictEqual(normalizePhpReturnType('callable(int): array<string>'), 'callable');
+            assert.strictEqual(normalizePhpReturnType('Closure(User): Collection<Post>'), 'Closure');
+        });
+
+        test('Should handle array shapes with optional keys', () => {
+            assert.strictEqual(normalizePhpReturnType('array{name: string, age?: int}'), 'array');
+            assert.strictEqual(normalizePhpReturnType('array{0: string, 1?: int}'), 'array');
+        });
+
+        test('Should handle variadic parameters in callable', () => {
+            assert.strictEqual(normalizePhpReturnType('callable(string, int...): void'), 'callable');
+            assert.strictEqual(normalizePhpReturnType('Closure(User, string...): array'), 'Closure');
+        });
     });
 
     suite('PHPStan/Psalm specific types', () => {
