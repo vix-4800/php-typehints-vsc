@@ -84,6 +84,24 @@ function getPersonShape() {
 }
 // Expected: : array
 
+/**
+ * @return array<array<string>>
+ */
+function getNestedStringArray() {
+    return [["a", "b"], ["c", "d"]];
+}
+// Expected: : array
+
+/**
+ * @return array<array<string, array|bool|string>>
+ */
+function getComplexNestedArray() {
+    return [
+        ["key" => ["nested"], "flag" => true, "text" => "value"]
+    ];
+}
+// Expected: : array
+
 // ============================================================================
 // GENERIC CLASSES -> Class (without generics)
 // ============================================================================
