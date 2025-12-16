@@ -255,7 +255,6 @@ suite('Type normalization for PHP return types', () => {
                 /function\s+\w+\([^)]*\)\s*:\s*([^\s{]+)/,
                 /_@return_\s*`([^`]+)`/,
                 /@return\s+([^\n*]+?)(?:\s*(?:\n|\*\/))/,
-                /\)\s*:\s*([^\s{]+)/,
             ];
 
             for (const pattern of patterns) {
