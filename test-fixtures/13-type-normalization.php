@@ -313,6 +313,10 @@ class TypeTestClass {
         return new static();
     }
     // Expected: : static
+
+    public function getThis() {
+        return $this;
+    }
 }
 
 /**
