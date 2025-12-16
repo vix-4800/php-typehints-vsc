@@ -159,7 +159,7 @@ function getUserFormatter() {
 function maybeGetString() {
     return null;
 }
-// Expected: : string|null (normalized, though ? is also valid in PHP 7.1+)
+// Expected: : string|null
 
 /**
  * @return ?User
@@ -223,7 +223,7 @@ function getAnyCollection() {
 function getUserClassName() {
     return User::class;
 }
-// Expected: : class-string (generic parameter removed)
+// Expected: : string
 
 /**
  * @return positive-int
@@ -231,7 +231,15 @@ function getUserClassName() {
 function getPositiveInt() {
     return 42;
 }
-// Expected: : positive-int (kept as-is, specific static analysis type)
+// Expected: : int
+
+/**
+ * @return negative-int
+ */
+function getNegativeInt() {
+    return -42;
+}
+// Expected: : int
 
 /**
  * @return non-empty-string
@@ -239,7 +247,23 @@ function getPositiveInt() {
 function getNonEmptyString() {
     return "value";
 }
-// Expected: : non-empty-string (kept as-is)
+// Expected: : string
+
+/**
+ * @return literal-string
+ */
+function getLiteralString() {
+    return "literal";
+}
+// Expected: : string
+
+/**
+ * @return numeric-string
+ */
+function getNumericString() {
+    return "123";
+}
+// Expected: : string
 
 // ============================================================================
 // VALID PHP TYPES (should remain unchanged)
@@ -314,9 +338,13 @@ class TypeTestClass {
     }
     // Expected: : static
 
+    /**
+     * Inferred return type from $this
+     */
     public function getThis() {
         return $this;
     }
+    // Expected: : static (normalized from $this)
 }
 
 /**

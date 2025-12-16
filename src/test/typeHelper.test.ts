@@ -13,6 +13,11 @@ function normalizePhpReturnType(type: string): string {
         return type;
     }
 
+    if (type.startsWith('?')) {
+        const innerType = normalizeSingleType(type.substring(1));
+        return `${innerType}|null`;
+    }
+
     if (type.includes('|')) {
         const parts = type.split('|').map(part => normalizeSingleType(part.trim()));
         const uniqueParts = [...new Set(parts.filter(p => p))];
@@ -25,8 +30,8 @@ function normalizePhpReturnType(type: string): string {
 function normalizeSingleType(type: string): string {
     type = type.trim();
 
-    if (type.startsWith('?')) {
-        return type.substring(1);
+    if (type === '$this') {
+        return 'static';
     }
 
     if (type.match(/\[\]$/)) {
@@ -52,6 +57,18 @@ function normalizeSingleType(type: string): string {
     if (type.match(/^(callable|Closure)\(.+\)/i)) {
         const callableMatch = type.match(/^(callable|Closure)/i);
         return callableMatch ? callableMatch[1] : type;
+    }
+
+    if (type.match(/^(positive|negative|non-positive|non-negative)-int$/i)) {
+        return 'int';
+    }
+
+    if (type.match(/^(non-empty|literal|class|callable|numeric|truthy|non-falsy)-string$/i)) {
+        return 'string';
+    }
+
+    if (type.match(/^class-string<.+>$/i)) {
+        return 'string';
     }
 
     const genericMatch = type.match(/^([A-Za-z_][A-Za-z0-9_\\]*)<.+>$/);
@@ -111,10 +128,10 @@ suite('Type normalization for PHP return types', () => {
     });
 
     suite('Nullable types', () => {
-        test('Should convert ?Type to Type (union handling will add |null)', () => {
-            assert.strictEqual(normalizePhpReturnType('?string'), 'string');
-            assert.strictEqual(normalizePhpReturnType('?int'), 'int');
-            assert.strictEqual(normalizePhpReturnType('?User'), 'User');
+        test('Should convert ?Type to Type|null', () => {
+            assert.strictEqual(normalizePhpReturnType('?string'), 'string|null');
+            assert.strictEqual(normalizePhpReturnType('?int'), 'int|null');
+            assert.strictEqual(normalizePhpReturnType('?User'), 'User|null');
         });
     });
 
@@ -200,6 +217,32 @@ suite('Type normalization for PHP return types', () => {
 
         test('Should handle union with multiple array notations', () => {
             assert.strictEqual(normalizePhpReturnType('string[]|array<int>|list<bool>'), 'array');
+        });
+    });
+
+    suite('PHPStan/Psalm specific types', () => {
+        test('Should normalize int variants to int', () => {
+            assert.strictEqual(normalizePhpReturnType('positive-int'), 'int');
+            assert.strictEqual(normalizePhpReturnType('negative-int'), 'int');
+            assert.strictEqual(normalizePhpReturnType('non-positive-int'), 'int');
+            assert.strictEqual(normalizePhpReturnType('non-negative-int'), 'int');
+        });
+
+        test('Should normalize string variants to string', () => {
+            assert.strictEqual(normalizePhpReturnType('non-empty-string'), 'string');
+            assert.strictEqual(normalizePhpReturnType('literal-string'), 'string');
+            assert.strictEqual(normalizePhpReturnType('class-string'), 'string');
+            assert.strictEqual(normalizePhpReturnType('callable-string'), 'string');
+            assert.strictEqual(normalizePhpReturnType('numeric-string'), 'string');
+        });
+
+        test('Should normalize class-string<T> to string', () => {
+            assert.strictEqual(normalizePhpReturnType('class-string<User>'), 'string');
+            assert.strictEqual(normalizePhpReturnType('class-string<DateTime>'), 'string');
+        });
+
+        test('Should normalize $this to static', () => {
+            assert.strictEqual(normalizePhpReturnType('$this'), 'static');
         });
     });
 });
