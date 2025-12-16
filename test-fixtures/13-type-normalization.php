@@ -85,6 +85,28 @@ function getPersonShape() {
 // Expected: : array
 
 /**
+ * @return array{title: string|null, body: string}
+ */
+function getNotificationSimple() {
+    return ["title" => null, "body" => "Message"];
+}
+// Expected: : array
+
+/**
+ * @return array{title: string|null, body: string, icon: string, type: TypeEnum, link: string|null}
+ */
+function getNotificationData() {
+    return [
+        "title" => "Title",
+        "body" => "Message body",
+        "icon" => "icon.png",
+        "type" => TypeEnum::INFO,
+        "link" => null
+    ];
+}
+// Expected: : array
+
+/**
  * @return array<array<string>>
  */
 function getNestedStringArray() {
