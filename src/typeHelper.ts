@@ -56,7 +56,7 @@ function extractReturnTypeFromHover(hover: vscode.Hover): string | null {
         const patterns = [
             /function\s+\w+\([^)]*\)\s*:\s*([^\s{]+)/,
             /_@return_\s*`([^`]+)`/,
-            /@return\s+([^\n*]+?)(?:\s*(?:\n|\*\/))/,
+            /@return\s+([^\n*]+?)(?:\s*(?:\n|\*\/|$))/,
         ];
 
         for (const pattern of patterns) {
