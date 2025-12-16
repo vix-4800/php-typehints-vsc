@@ -245,4 +245,73 @@ suite('Type normalization for PHP return types', () => {
             assert.strictEqual(normalizePhpReturnType('$this'), 'static');
         });
     });
+
+    suite('PHPDoc pattern extraction simulation', () => {
+        /**
+         * Simulate extracting type from @return annotation
+         * This tests the regex pattern used in extractReturnTypeFromHover
+         */
+        function extractTypeFromPhpDoc(phpDocLine: string): string | null {
+            const pattern = /@return\s+(.+?)(?:\s*\*\/|\s*$|\n)/;
+            const match = phpDocLine.match(pattern);
+            if (match && match[1]) {
+                return normalizePhpReturnType(match[1].trim());
+            }
+            return null;
+        }
+
+        test('Should extract simple types from @return', () => {
+            assert.strictEqual(extractTypeFromPhpDoc('@return string'), 'string');
+            assert.strictEqual(extractTypeFromPhpDoc('@return int'), 'int');
+            assert.strictEqual(extractTypeFromPhpDoc('@return User'), 'User');
+        });
+
+        test('Should extract array types from @return', () => {
+            assert.strictEqual(extractTypeFromPhpDoc('@return string[]'), 'array');
+            assert.strictEqual(extractTypeFromPhpDoc('@return array<string>'), 'array');
+            assert.strictEqual(extractTypeFromPhpDoc('@return list<int>'), 'array');
+        });
+
+        test('Should extract callable with signature from @return', () => {
+            assert.strictEqual(extractTypeFromPhpDoc('@return callable(int): string'), 'callable');
+            assert.strictEqual(extractTypeFromPhpDoc('@return callable(string, int): bool'), 'callable');
+            assert.strictEqual(extractTypeFromPhpDoc('@return Closure(User): string'), 'Closure');
+        });
+
+        test('Should extract generic types from @return', () => {
+            assert.strictEqual(extractTypeFromPhpDoc('@return Collection<User>'), 'Collection');
+            assert.strictEqual(extractTypeFromPhpDoc('@return Generator<int, string, mixed, void>'), 'Generator');
+        });
+
+        test('Should extract union types from @return', () => {
+            assert.strictEqual(extractTypeFromPhpDoc('@return string|int'), 'string|int');
+            assert.strictEqual(extractTypeFromPhpDoc('@return User|null'), 'User|null');
+            assert.strictEqual(extractTypeFromPhpDoc('@return string[]|null'), 'array|null');
+        });
+
+        test('Should extract nullable types from @return', () => {
+            assert.strictEqual(extractTypeFromPhpDoc('@return ?string'), 'string|null');
+            assert.strictEqual(extractTypeFromPhpDoc('@return ?User'), 'User|null');
+        });
+
+        test('Should extract PHPStan types from @return', () => {
+            assert.strictEqual(extractTypeFromPhpDoc('@return class-string<User>'), 'string');
+            assert.strictEqual(extractTypeFromPhpDoc('@return positive-int'), 'int');
+            assert.strictEqual(extractTypeFromPhpDoc('@return non-empty-string'), 'string');
+        });
+
+        test('Should handle @return with closing comment', () => {
+            assert.strictEqual(extractTypeFromPhpDoc('@return callable(int): string */'), 'callable');
+            assert.strictEqual(extractTypeFromPhpDoc('@return Collection<User> */'), 'Collection');
+        });
+
+        test('Should handle multiline PHPDoc patterns', () => {
+            const multiline = `* @return callable(int): string\n     * Some description`;
+            const pattern = /@return\s+(.+?)(?:\s*\*\/|\s*$|\n)/;
+            const match = multiline.match(pattern);
+            if (match && match[1]) {
+                assert.strictEqual(normalizePhpReturnType(match[1].trim()), 'callable');
+            }
+        });
+    });
 });
