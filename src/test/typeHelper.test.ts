@@ -276,6 +276,7 @@ suite('Type normalization for PHP return types', () => {
             assert.strictEqual(extractTypeFromPhpDoc('@return callable(int): string'), 'callable');
             assert.strictEqual(extractTypeFromPhpDoc('@return callable(string, int): bool'), 'callable');
             assert.strictEqual(extractTypeFromPhpDoc('@return Closure(User): string'), 'Closure');
+            assert.strictEqual(extractTypeFromPhpDoc('@return callable(int): string */'), 'callable');
         });
 
         test('Should extract generic types from @return', () => {
@@ -311,6 +312,25 @@ suite('Type normalization for PHP return types', () => {
             const match = multiline.match(pattern);
             if (match && match[1]) {
                 assert.strictEqual(normalizePhpReturnType(match[1].trim()), 'callable');
+            }
+        });
+
+        test('Should handle real hover text examples', () => {
+            // Simulate real hover markdown from Intelephense
+            const hoverExamples = [
+                { text: '```php\n@return callable(int): string\n```', expected: 'callable' },
+                { text: '_@return_ `callable(int): string`', expected: 'callable' },
+                { text: '@return callable(string, int): bool', expected: 'callable' },
+                { text: '* @return Closure(User): string\n */', expected: 'Closure' },
+            ];
+
+            for (const example of hoverExamples) {
+                const pattern = /@return\s+(.+?)(?:\s*\*\/|\s*$|\n)/;
+                const match = example.text.match(pattern);
+                if (match && match[1]) {
+                    const normalized = normalizePhpReturnType(match[1].trim());
+                    assert.strictEqual(normalized, example.expected, `Failed for: ${example.text}`);
+                }
             }
         });
     });
