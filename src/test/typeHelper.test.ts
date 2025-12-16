@@ -113,6 +113,13 @@ suite('Type normalization for PHP return types', () => {
             assert.strictEqual(normalizePhpReturnType('array{name: string, age: int}'), 'array');
             assert.strictEqual(normalizePhpReturnType('array{0: string, 1: int}'), 'array');
         });
+
+        test('Should convert nested array types to array', () => {
+            assert.strictEqual(normalizePhpReturnType('array<array<string>>'), 'array');
+            assert.strictEqual(normalizePhpReturnType('array<array<int, string>>'), 'array');
+            assert.strictEqual(normalizePhpReturnType('array<array<string, array|bool|string>>'), 'array');
+            assert.strictEqual(normalizePhpReturnType('array<string, array<int>>'), 'array');
+        });
     });
 
     suite('Generic types', () => {
