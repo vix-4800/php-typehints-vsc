@@ -155,6 +155,8 @@ suite('Type normalization for PHP return types', () => {
         test('Should convert array shapes to array', () => {
             assert.strictEqual(normalizePhpReturnType('array{name: string, age: int}'), 'array');
             assert.strictEqual(normalizePhpReturnType('array{0: string, 1: int}'), 'array');
+            assert.strictEqual(normalizePhpReturnType('array{title: string|null, body: string}'), 'array');
+            assert.strictEqual(normalizePhpReturnType('array{title: string|null, body: string, icon: string, type: TypeEnum, link: string|null}'), 'array');
         });
 
         test('Should convert nested array types to array', () => {
