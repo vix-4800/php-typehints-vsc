@@ -367,6 +367,16 @@ function inferExpressionType(expr: any): string | null {
             return null;
 
         case 'bin':
+            if ([
+                '>', '<', '>=', '<=',
+                '==', '===', '!=', '!==',
+                '<>',
+                '&&', '||', 'and', 'or', 'xor',
+                'instanceof'
+            ].includes(expr.type)) {
+                return 'bool';
+            }
+
             if (expr.type === '+' || expr.type === '-' || expr.type === '*' || expr.type === '/') {
                 const leftType = inferExpressionType(expr.left);
                 const rightType = inferExpressionType(expr.right);
@@ -374,15 +384,20 @@ function inferExpressionType(expr: any): string | null {
                 if (leftType === 'float' || rightType === 'float') {
                     return 'float';
                 }
-                if (leftType === 'int' && rightType === 'int') {
+
+                if (leftType === 'int' || rightType === 'int') {
+                    return 'int';
+                }
+
+                if (leftType || rightType) {
                     return 'int';
                 }
             }
-            if (expr.type === '.' || expr.type === '??') {
-                if (expr.type === '.') {
-                    return 'string';
-                }
+
+            if (expr.type === '.') {
+                return 'string';
             }
+
             return null;
 
         case 'unary':
