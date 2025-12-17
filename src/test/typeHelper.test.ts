@@ -355,10 +355,23 @@ suite('Type normalization for PHP return types', () => {
          * Simulate the full extraction pipeline
          */
         function extractTypeFromText(text: string): string | null {
-            const patterns = [
-                /function\s+\w+\([^)]*\)\s*:\s*([^\s{]+)/,
+            const signaturePatterns: RegExp[] = [
+                /\bfunction\b\s*(?:\w+\s*)?\([^)]*\)\s*:\s*([^\s{]+)/,
+                /\bfn\b\s*\([^)]*\)\s*:\s*([^\s{]+)/,
+            ];
+
+            const closureLikePattern =
+                /(?:^|[^\w@])(?:\\?Closure|\\?callable)\s*\([^)]*\)\s*:\s*([^\s{]+)/i;
+
+            const docPatterns: RegExp[] = [
                 /_@return_\s*`([^`]+)`/,
                 /@return\s+([^\n*]+?)(?:\s*(?:\n|\*\/|$))/,
+            ];
+
+            const patterns: RegExp[] = [
+                ...signaturePatterns,
+                ...(text.includes('@return') ? [] : [closureLikePattern]),
+                ...docPatterns,
             ];
 
             for (const pattern of patterns) {
@@ -389,6 +402,17 @@ suite('Type normalization for PHP return types', () => {
             assert.strictEqual(extractTypeFromText('@return callable(int): string'), 'callable');
             assert.strictEqual(extractTypeFromText('@return callable(string, int): bool'), 'callable');
             assert.strictEqual(extractTypeFromText('@return Closure(User): string'), 'Closure');
+        });
+
+        test('Should extract return type from anonymous function signature', () => {
+            assert.strictEqual(extractTypeFromText('function ($model): array'), 'array');
+            assert.strictEqual(extractTypeFromText('static function ($model): array'), 'array');
+        });
+
+        test('Should extract return type from Closure/callable signature', () => {
+            assert.strictEqual(extractTypeFromText('Closure($model): array'), 'array');
+            assert.strictEqual(extractTypeFromText('callable($model): string'), 'string');
+            assert.strictEqual(extractTypeFromText('\\Closure($model): int'), 'int');
         });
 
         test('Should extract from _@return_ with backticks', () => {
