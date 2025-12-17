@@ -1,5 +1,5 @@
+import { Call, Function, Method, New, Node } from 'php-parser';
 import * as vscode from 'vscode';
-import { Node, Program, Call, New, Function, Method } from 'php-parser';
 import { AstCache } from './astCache.js';
 
 const astCache = new AstCache(50);
@@ -26,6 +26,7 @@ export interface FunctionDeclarationInfo {
     position: vscode.Position;
     namePosition: vscode.Position;
     hasReturnType: boolean;
+    astNode: Function | Method;
 }
 
 export function parseFunctionCalls(
@@ -345,6 +346,7 @@ function extractFunctionDeclarationInfo(
         position,
         namePosition,
         hasReturnType,
+        astNode: node,
     };
 }
 

@@ -1,12 +1,14 @@
+import { Function, Method } from 'php-parser';
 import * as vscode from 'vscode';
 
 /**
  * Get return type for a function at a given position using LSP
- * This relies on language servers like Intelephense to provide accurate type information
+ * Falls back to AST-based inference if LSP doesn't provide type information
  */
 export async function getReturnTypeAtPosition(
     document: vscode.TextDocument,
-    position: vscode.Position
+    position: vscode.Position,
+    astNode?: Function | Method
 ): Promise<string | null> {
     try {
         const hovers = await vscode.commands.executeCommand<vscode.Hover[]>(
@@ -15,19 +17,24 @@ export async function getReturnTypeAtPosition(
             position
         );
 
-        if (!hovers || hovers.length === 0) {
-            return null;
+        if (hovers && hovers.length > 0) {
+            for (const hover of hovers) {
+                const returnType = extractReturnTypeFromHover(hover);
+                if (returnType) {
+                    return returnType;
+                }
+            }
         }
 
-        for (const hover of hovers) {
-            const returnType = extractReturnTypeFromHover(hover);
-            if (returnType) {
-                return returnType;
-            }
+        if (astNode) {
+            return inferReturnTypeFromAst(astNode);
         }
 
         return null;
     } catch (error) {
+        if (astNode) {
+            return inferReturnTypeFromAst(astNode);
+        }
         return null;
     }
 }
@@ -237,4 +244,166 @@ function normalizeSingleType(type: string): string {
     }
 
     return type;
+}
+
+/**
+ * Infer return type from AST by analyzing return statements
+ * This is a fallback when LSP doesn't provide type information
+ */
+function inferReturnTypeFromAst(node: Function | Method): string | null {
+    if (!node.body) {
+        return null;
+    }
+
+    const returnTypes = new Set<string>();
+    let hasReturn = false;
+
+    const collectReturnTypes = (n: any): void => {
+        if (!n || typeof n !== 'object') {
+            return;
+        }
+
+        if (n.kind === 'return') {
+            hasReturn = true;
+            const type = inferExpressionType(n.expr);
+            if (type) {
+                returnTypes.add(type);
+            }
+        }
+
+        if (n.kind === 'function' || n.kind === 'method' || n.kind === 'closure' || n.kind === 'arrowfunc') {
+            return;
+        }
+
+        for (const key in n) {
+            if (n.hasOwnProperty(key)) {
+                const value = n[key];
+                if (Array.isArray(value)) {
+                    value.forEach(item => collectReturnTypes(item));
+                } else if (typeof value === 'object' && value !== null) {
+                    collectReturnTypes(value);
+                }
+            }
+        }
+    };
+
+    if (node.kind === 'arrowfunc' && node.body) {
+        const type = inferExpressionType(node.body);
+        return type || null;
+    }
+
+    collectReturnTypes(node.body);
+
+    if (!hasReturn) {
+        return 'void';
+    }
+
+    if (returnTypes.size === 0) {
+        return null;
+    }
+
+    const types = Array.from(returnTypes);
+
+    if (types.length === 1) {
+        return types[0];
+    }
+
+    if (types.length === 2 && types.includes('null')) {
+        const otherType = types.find(t => t !== 'null');
+        return otherType ? `${otherType}|null` : null;
+    }
+
+    if (types.every(t => ['int', 'float', 'string', 'bool', 'array', 'null', 'void'].includes(t))) {
+        return types.join('|');
+    }
+
+    return null;
+}
+
+/**
+ * Infer the type of an expression from AST
+ * Returns simple, safe types only
+ */
+function inferExpressionType(expr: any): string | null {
+    if (!expr || typeof expr !== 'object') {
+        return null;
+    }
+
+    switch (expr.kind) {
+        case 'array':
+            return 'array';
+
+        case 'string':
+        case 'encapsed':
+        case 'nowdoc':
+        case 'heredoc':
+            return 'string';
+
+        case 'number':
+            if (expr.value && typeof expr.value === 'string' && expr.value.includes('.')) {
+                return 'float';
+            }
+            return 'int';
+
+        case 'boolean':
+            return 'bool';
+
+        case 'nullkeyword':
+        case 'null':
+            return 'null';
+
+        case 'new':
+            if (expr.what && expr.what.name) {
+                if (typeof expr.what.name === 'string') {
+                    return expr.what.name;
+                }
+            }
+            return null;
+
+        case 'variable':
+            if (expr.name === 'this') {
+                return 'static';
+            }
+            return null;
+
+        case 'bin':
+            if (expr.type === '+' || expr.type === '-' || expr.type === '*' || expr.type === '/') {
+                const leftType = inferExpressionType(expr.left);
+                const rightType = inferExpressionType(expr.right);
+
+                if (leftType === 'float' || rightType === 'float') {
+                    return 'float';
+                }
+                if (leftType === 'int' && rightType === 'int') {
+                    return 'int';
+                }
+            }
+            if (expr.type === '.' || expr.type === '??') {
+                if (expr.type === '.') {
+                    return 'string';
+                }
+            }
+            return null;
+
+        case 'unary':
+            if (expr.type === '!') {
+                return 'bool';
+            }
+            return null;
+
+        case 'retif':
+            const trueType = inferExpressionType(expr.trueExpr);
+            const falseType = inferExpressionType(expr.falseExpr);
+
+            if (trueType === falseType) {
+                return trueType;
+            }
+            if (trueType && falseType) {
+                return `${trueType}|${falseType}`;
+            }
+            return null;
+
+        default:
+            return null;
+    }
 }
