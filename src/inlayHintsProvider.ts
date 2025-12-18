@@ -88,9 +88,21 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                     continue;
                 }
 
+                const labelPart = new vscode.InlayHintLabelPart(`${paramName}:`);
+                labelPart.tooltip = `Click to add named parameter '${paramName}'`;
+                labelPart.command = {
+                    title: 'Insert Named Parameter',
+                    command: 'phpTypeHints.insertNamedParameter',
+                    arguments: [{
+                        uri: document.uri.toString(),
+                        position: arg.position,
+                        paramName: paramName
+                    }]
+                };
+
                 const hint = new vscode.InlayHint(
                     arg.position,
-                    `${paramName}:`,
+                    [labelPart],
                     vscode.InlayHintKind.Parameter
                 );
 
@@ -124,9 +136,21 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                 continue;
             }
 
+            const labelPart = new vscode.InlayHintLabelPart(`: ${returnType}`);
+            labelPart.tooltip = `Click to add return type '${returnType}'`;
+            labelPart.command = {
+                title: 'Insert Return Type',
+                command: 'phpTypeHints.insertReturnType',
+                arguments: [{
+                    uri: document.uri.toString(),
+                    position: decl.position,
+                    returnType: returnType
+                }]
+            };
+
             const hint = new vscode.InlayHint(
                 decl.position,
-                `: ${returnType}`,
+                [labelPart],
                 vscode.InlayHintKind.Type
             );
 

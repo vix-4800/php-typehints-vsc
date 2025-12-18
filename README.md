@@ -6,6 +6,9 @@ Display parameter names and return types as inlay hints for PHP.
 
 - **Parameter Hints**: Shows parameter names before arguments in function and method calls
 - **Return Type Hints**: Displays inferred return types for functions without explicit type declarations
+- **Interactive Hints**: Click on hints to insert them into your code!
+  - Click on parameter hints to add named parameters (PHP 8.0+)
+  - Click on return type hints to add type annotations
 - **Smart Detection**: Automatically hides hints for named arguments (PHP 8.0+)
 - **Configurable**: Hide hints when variable names match parameter names
 - **LSP-Powered**: Leverages Language Server Protocol for accurate type information
@@ -43,6 +46,8 @@ Display parameter names and return types as inlay hints for PHP.
 ## Commands
 
 - **PHP Type Hints: Toggle Hints** - Quickly enable/disable all hints
+- **PHP Type Hints: Insert Named Parameter** - Insert a named parameter (triggered by clicking hint)
+- **PHP Type Hints: Insert Return Type** - Insert a return type annotation (triggered by clicking hint)
 
 ## Development
 

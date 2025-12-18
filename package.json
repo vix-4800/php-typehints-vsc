@@ -44,6 +44,14 @@
             {
                 "command": "phpTypeHints.toggleHints",
                 "title": "PHP Type Hints: Toggle Hints"
+            },
+            {
+                "command": "phpTypeHints.insertNamedParameter",
+                "title": "PHP Type Hints: Insert Named Parameter"
+            },
+            {
+                "command": "phpTypeHints.insertReturnType",
+                "title": "PHP Type Hints: Insert Return Type"
             }
         ],
         "configuration": {

@@ -26,7 +26,37 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showInformationMessage(`PHP Type Hints ${status}`);
     });
 
-    context.subscriptions.push(disposable, closeDisposable, toggleCommand);
+    const insertNamedParamCommand = vscode.commands.registerCommand(
+        'phpTypeHints.insertNamedParameter',
+        async (args: { uri: string; position: vscode.Position; paramName: string }) => {
+            const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(args.uri));
+            const editor = await vscode.window.showTextDocument(document);
+
+            await editor.edit(editBuilder => {
+                editBuilder.insert(args.position, `${args.paramName}: `);
+            });
+        }
+    );
+
+    const insertReturnTypeCommand = vscode.commands.registerCommand(
+        'phpTypeHints.insertReturnType',
+        async (args: { uri: string; position: vscode.Position; returnType: string }) => {
+            const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(args.uri));
+            const editor = await vscode.window.showTextDocument(document);
+
+            await editor.edit(editBuilder => {
+                editBuilder.insert(args.position, `: ${args.returnType}`);
+            });
+        }
+    );
+
+    context.subscriptions.push(
+        disposable,
+        closeDisposable,
+        toggleCommand,
+        insertNamedParamCommand,
+        insertReturnTypeCommand
+    );
 }
 
 export function deactivate() {
