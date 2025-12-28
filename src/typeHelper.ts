@@ -257,6 +257,7 @@ function inferReturnTypeFromAst(node: Function | Method): string | null {
 
     const returnTypes = new Set<string>();
     let hasReturn = false;
+    let hasUnknownReturn = false;
 
     const collectReturnTypes = (n: any): void => {
         if (!n || typeof n !== 'object') {
@@ -268,6 +269,8 @@ function inferReturnTypeFromAst(node: Function | Method): string | null {
             const type = inferExpressionType(n.expr);
             if (type) {
                 returnTypes.add(type);
+            } else if (n.expr) {
+                hasUnknownReturn = true;
             }
         }
 
@@ -293,6 +296,10 @@ function inferReturnTypeFromAst(node: Function | Method): string | null {
     }
 
     collectReturnTypes(node.body);
+
+    if (hasUnknownReturn) {
+        return null;
+    }
 
     if (!hasReturn) {
         return 'void';
