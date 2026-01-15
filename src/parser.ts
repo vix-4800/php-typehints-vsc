@@ -214,7 +214,17 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
         actualArg = arg.value;
     }
 
-    position = new vscode.Position(actualArg.loc.start.line - 1, actualArg.loc.start.column);
+    let positionSource = actualArg;
+    while (
+        (positionSource.kind === 'nullsafepropertylookup' ||
+            positionSource.kind === 'propertylookup' ||
+            positionSource.kind === 'call') &&
+        positionSource.what?.loc
+    ) {
+        positionSource = positionSource.what;
+    }
+
+    position = new vscode.Position(positionSource.loc.start.line - 1, positionSource.loc.start.column);
 
     if ((actualArg.kind === 'arrowfunc' || actualArg.kind === 'closure') && actualArg.isStatic) {
         const line = document.lineAt(position.line).text;
