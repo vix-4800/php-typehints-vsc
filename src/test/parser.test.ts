@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
-import { parseFunctionCalls, parseFunctionDeclarations, getAstCache } from '../parser';
+import { getAstCache, parseFunctionCalls, parseFunctionDeclarations } from '../parser';
 
 suite('Parser Test Suite', () => {
     let docCounter = 0;
@@ -121,6 +121,42 @@ suite('Parser Test Suite', () => {
 
             const callsWith1Arg = calls.filter((c) => c.arguments.length === 1);
             assert.ok(callsWith1Arg.length >= 1, 'Should have at least 1 call with 1 argument');
+        });
+
+        test('Nullsafe argument position should be at start of expression', () => {
+            const content = `<?php
+$solver = new TwoCaptcha(Config::findOne(['key' => 'test'])?->value);`;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            const twoCaptchaCall = calls.find(
+                (c) => c.arguments.length === 1 && c.arguments[0].text.includes('Config::findOne')
+            );
+
+            assert.ok(twoCaptchaCall, 'Should find TwoCaptcha call');
+            assert.strictEqual(
+                twoCaptchaCall!.arguments[0].position.character,
+                25,
+                `Argument position should be at start of expression (column 25), got ${twoCaptchaCall!.arguments[0].position.character}`
+            );
+        });
+
+        test('Chained nullsafe method call argument position', () => {
+            const content = `<?php
+$result = Html::a($model->createdBy?->getShortName(), []);`;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            const htmlACall = calls.find((c) => c.arguments.length === 2);
+
+            assert.ok(htmlACall, 'Should find Html::a call');
+            assert.strictEqual(
+                htmlACall!.arguments[0].position.character,
+                18,
+                `First argument position should be at start of expression (column 18), got ${htmlACall!.arguments[0].position.character}`
+            );
         });
 
         test('Parse method chaining', () => {
