@@ -214,12 +214,6 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
         actualArg = arg.value;
     }
 
-    if (actualArg.kind === 'propertylookup' || actualArg.kind === 'nullsafepropertylookup') {
-        if (actualArg.what && actualArg.what.loc) {
-            actualArg = actualArg.what;
-        }
-    }
-
     position = new vscode.Position(actualArg.loc.start.line - 1, actualArg.loc.start.column);
 
     if ((actualArg.kind === 'arrowfunc' || actualArg.kind === 'closure') && actualArg.isStatic) {
