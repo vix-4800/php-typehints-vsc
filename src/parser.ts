@@ -26,6 +26,7 @@ export interface FunctionDeclarationInfo {
     position: vscode.Position;
     namePosition: vscode.Position;
     hasReturnType: boolean;
+    canHaveReturnType: boolean;
     astNode: Function | Method;
 }
 
@@ -331,6 +332,14 @@ function extractFunctionDeclarationInfo(
 
     const hasReturnType = node.type !== null && node.type !== undefined;
 
+    let canHaveReturnType = true;
+    if (node.kind === 'method' && node.name && typeof node.name === 'object' && node.name.name) {
+        const methodName = node.name.name.toLowerCase();
+        if (methodName === '__construct' || methodName === '__destruct' || methodName === '__clone') {
+            canHaveReturnType = false;
+        }
+    }
+
     const position = findReturnTypeHintPosition(node, document);
 
     let namePosition: vscode.Position;
@@ -350,6 +359,7 @@ function extractFunctionDeclarationInfo(
         position,
         namePosition,
         hasReturnType,
+        canHaveReturnType,
         astNode: node,
     };
 }

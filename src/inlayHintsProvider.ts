@@ -127,7 +127,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                 break;
             }
 
-            if (decl.hasReturnType) {
+            if (decl.hasReturnType || !decl.canHaveReturnType) {
                 continue;
             }
 
