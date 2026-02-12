@@ -435,6 +435,52 @@ $result = Html::a($model->createdBy?->getShortName(), []);`;
             const declarations = parseFunctionDeclarations(doc, range);
 
             assert.strictEqual(declarations.length, 1, 'Should find constructor');
+            assert.strictEqual(declarations[0].canHaveReturnType, false, '__construct cannot have return type');
+        });
+
+        test('Magic methods cannot have return types', () => {
+            const content = `<?php
+            class TestClass {
+                public function __construct() {}
+                public function __destruct() {}
+                public function __clone() {}
+                public function regularMethod() { return 1; }
+            }
+            `;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const declarations = parseFunctionDeclarations(doc, range);
+
+            assert.strictEqual(declarations.length, 4, 'Should find 4 methods');
+
+            const construct = declarations.find(d =>
+                d.astNode.kind === 'method' &&
+                (d.astNode as any).name?.name === '__construct'
+            );
+            const destruct = declarations.find(d =>
+                d.astNode.kind === 'method' &&
+                (d.astNode as any).name?.name === '__destruct'
+            );
+            const clone = declarations.find(d =>
+                d.astNode.kind === 'method' &&
+                (d.astNode as any).name?.name === '__clone'
+            );
+            const regular = declarations.find(d =>
+                d.astNode.kind === 'method' &&
+                (d.astNode as any).name?.name === 'regularMethod'
+            );
+
+            assert.ok(construct, 'Should find __construct');
+            assert.strictEqual(construct!.canHaveReturnType, false, '__construct cannot have return type');
+
+            assert.ok(destruct, 'Should find __destruct');
+            assert.strictEqual(destruct!.canHaveReturnType, false, '__destruct cannot have return type');
+
+            assert.ok(clone, 'Should find __clone');
+            assert.strictEqual(clone!.canHaveReturnType, false, '__clone cannot have return type');
+
+            assert.ok(regular, 'Should find regularMethod');
+            assert.strictEqual(regular!.canHaveReturnType, true, 'Regular methods can have return type');
         });
 
         test('Parse multiple functions in one document', () => {
