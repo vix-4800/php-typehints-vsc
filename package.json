@@ -3,7 +3,7 @@
     "displayName": "PHP Type Hints",
     "description": "Display parameter names and return types as inlay hints for PHP",
     "icon": "icon.png",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "license": "MIT",
     "publisher": "vix",
     "repository": {
