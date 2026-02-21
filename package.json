@@ -105,7 +105,7 @@
         "typescript-eslint": "^8.48.1"
     },
     "dependencies": {
-        "php-parser": "^3.2.5"
+        "php-parser": "^3.3.0"
     },
     "extensionDependencies": [
         "bmewburn.vscode-intelephense-client"
