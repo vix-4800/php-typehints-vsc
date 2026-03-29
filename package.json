@@ -1,113 +1,113 @@
 {
-    "name": "php-typehints-vsc",
-    "displayName": "PHP Type Hints",
-    "description": "Display parameter names and return types as inlay hints for PHP",
-    "icon": "icon.png",
-    "version": "0.1.8",
-    "license": "MIT",
-    "publisher": "vix",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/vix-4800/php-typehints-vsc"
-    },
-    "homepage": "https://github.com/vix-4800/php-typehints-vsc",
-    "bugs": {
-        "url": "https://github.com/vix-4800/php-typehints-vsc/issues"
-    },
-    "author": {
-        "name": "Anton VIX",
-        "email": "Gordan.ei@protonmail.ch",
-        "url": "https://github.com/vix-4800"
-    },
-    "engines": {
-        "vscode": "^1.107.0"
-    },
-    "categories": [
-        "Programming Languages"
+  "name": "php-typehints-vsc",
+  "displayName": "PHP Type Hints",
+  "description": "Display parameter names and return types as inlay hints for PHP",
+  "icon": "icon.png",
+  "version": "0.1.8",
+  "license": "MIT",
+  "publisher": "vix",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vix-4800/php-typehints-vsc"
+  },
+  "homepage": "https://github.com/vix-4800/php-typehints-vsc",
+  "bugs": {
+    "url": "https://github.com/vix-4800/php-typehints-vsc/issues"
+  },
+  "author": {
+    "name": "Anton VIX",
+    "email": "Gordan.ei@protonmail.ch",
+    "url": "https://github.com/vix-4800"
+  },
+  "engines": {
+    "vscode": "^1.110.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "php",
+    "language",
+    "references",
+    "parameter",
+    "symbols",
+    "php extension",
+    "php typehints",
+    "parameter typehints"
+  ],
+  "activationEvents": [
+    "onLanguage:php"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "phpTypeHints.toggleHints",
+        "title": "PHP Type Hints: Toggle Hints"
+      },
+      {
+        "command": "phpTypeHints.insertNamedParameter",
+        "title": "PHP Type Hints: Insert Named Parameter"
+      },
+      {
+        "command": "phpTypeHints.insertReturnType",
+        "title": "PHP Type Hints: Insert Return Type"
+      }
     ],
-    "keywords": [
-        "php",
-        "language",
-        "references",
-        "parameter",
-        "symbols",
-        "php extension",
-        "php typehints",
-        "parameter typehints"
-    ],
-    "activationEvents": [
-        "onLanguage:php"
-    ],
-    "main": "./out/extension.js",
-    "contributes": {
-        "commands": [
-            {
-                "command": "phpTypeHints.toggleHints",
-                "title": "PHP Type Hints: Toggle Hints"
-            },
-            {
-                "command": "phpTypeHints.insertNamedParameter",
-                "title": "PHP Type Hints: Insert Named Parameter"
-            },
-            {
-                "command": "phpTypeHints.insertReturnType",
-                "title": "PHP Type Hints: Insert Return Type"
-            }
-        ],
-        "configuration": {
-            "title": "PHP Type Hints",
-            "properties": {
-                "phpTypeHints.enabled": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Enable/disable PHP type hints (parameters and return types)"
-                },
-                "phpTypeHints.hideWhenArgumentMatchesName": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Hide hint when variable name matches parameter name (e.g., setUser($user))"
-                },
-                "phpTypeHints.showParameterHints": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Show parameter name hints for function calls"
-                },
-                "phpTypeHints.showReturnTypeHints": {
-                    "type": "boolean",
-                    "default": true,
-                    "description": "Show return type hints for function declarations"
-                },
-                "phpTypeHints.maxFileSize": {
-                    "type": "number",
-                    "default": 100000,
-                    "description": "Maximum file size in bytes to process (default: 100KB)"
-                }
-            }
+    "configuration": {
+      "title": "PHP Type Hints",
+      "properties": {
+        "phpTypeHints.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable/disable PHP type hints (parameters and return types)"
+        },
+        "phpTypeHints.hideWhenArgumentMatchesName": {
+          "type": "boolean",
+          "default": true,
+          "description": "Hide hint when variable name matches parameter name (e.g., setUser($user))"
+        },
+        "phpTypeHints.showParameterHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show parameter name hints for function calls"
+        },
+        "phpTypeHints.showReturnTypeHints": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show return type hints for function declarations"
+        },
+        "phpTypeHints.maxFileSize": {
+          "type": "number",
+          "default": 100000,
+          "description": "Maximum file size in bytes to process (default: 100KB)"
         }
-    },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "pretest": "npm run compile && npm run lint",
-        "lint": "eslint src",
-        "test": "vscode-test",
-        "package": "vsce package"
-    },
-    "devDependencies": {
-        "@types/mocha": "^10.0.10",
-        "@types/node": "^25.3.2",
-        "@types/vscode": "^1.107.0",
-        "@vscode/test-cli": "^0.0.12",
-        "@vscode/test-electron": "^2.5.2",
-        "@vscode/vsce": "^3.7.1",
-        "eslint": "^9.39.1",
-        "typescript": "^5.9.3",
-        "typescript-eslint": "^8.56.1"
-    },
-    "dependencies": {
-        "php-parser": "^3.4.0"
-    },
-    "extensionDependencies": [
-        "bmewburn.vscode-intelephense-client"
-    ]
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.5.0",
+    "@types/vscode": "^1.110.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
+    "eslint": "^10.1.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.2"
+  },
+  "dependencies": {
+    "php-parser": "^3.5.0"
+  },
+  "extensionDependencies": [
+    "bmewburn.vscode-intelephense-client"
+  ]
 }
