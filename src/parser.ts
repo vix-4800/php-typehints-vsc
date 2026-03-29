@@ -201,6 +201,27 @@ function findOpeningParenPosition(
     return new vscode.Position(finalLine, finalCol);
 }
 
+function findExpressionStartNode(node: any): any {
+    let current = node;
+
+    for (;;) {
+        if (
+            (current.kind === 'nullsafepropertylookup' ||
+                current.kind === 'propertylookup' ||
+                current.kind === 'call') &&
+            current.what?.loc
+        ) {
+            current = current.what;
+        } else if (current.kind === 'bin' && current.left?.loc) {
+            current = current.left;
+        } else {
+            break;
+        }
+    }
+
+    return current;
+}
+
 function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentInfo | null {
     if (!arg.loc) {
         return null;
@@ -215,17 +236,8 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
         actualArg = arg.value;
     }
 
-    let positionSource = actualArg;
-    while (
-        (positionSource.kind === 'nullsafepropertylookup' ||
-            positionSource.kind === 'propertylookup' ||
-            positionSource.kind === 'call') &&
-        positionSource.what?.loc
-    ) {
-        positionSource = positionSource.what;
-    }
-
-    position = new vscode.Position(positionSource.loc.start.line - 1, positionSource.loc.start.column);
+    const startNode = findExpressionStartNode(actualArg);
+    position = new vscode.Position(startNode.loc.start.line - 1, startNode.loc.start.column);
 
     if ((actualArg.kind === 'arrowfunc' || actualArg.kind === 'closure') && actualArg.isStatic) {
         const line = document.lineAt(position.line).text;

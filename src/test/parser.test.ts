@@ -334,6 +334,22 @@ $result = Html::a($model->createdBy?->getShortName(), []);`;
             assert.strictEqual(calls.length, 1, 'Should find createUser call');
             assert.strictEqual(calls[0].arguments.length, 3, 'Should have 3 arguments');
         });
+
+        test('Argument position for instanceof && instanceof expression should be at start of expression', () => {
+            const content = `<?php
+assert($sender instanceof Book && $sender instanceof CustomUserEmployeeTrait);`;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 1, 'Should find one assert call');
+            assert.strictEqual(calls[0].arguments.length, 1, 'Should find one argument');
+            assert.strictEqual(
+                calls[0].arguments[0].position.character,
+                7,
+                `Argument position should be at start of $sender (column 7), got ${calls[0].arguments[0].position.character}`
+            );
+        });
     });
 
     suite('Function Declarations Parsing', () => {
