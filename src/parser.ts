@@ -1,4 +1,4 @@
-import { Call, Function, Method, New, Node } from 'php-parser';
+import type { Call, Function, Method, New, Node } from 'php-parser';
 import * as vscode from 'vscode';
 import { AstCache } from './astCache.js';
 
@@ -233,7 +233,7 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
     let position: vscode.Position;
     let actualArg = arg;
 
-    if (isNamed && arg.value && arg.value.loc) {
+    if (isNamed && arg.value?.loc) {
         actualArg = arg.value;
     }
 
@@ -243,7 +243,7 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
     if ((actualArg.kind === 'arrowfunc' || actualArg.kind === 'closure') && actualArg.isStatic) {
         const line = document.lineAt(position.line).text;
         const beforeArg = line.substring(0, position.character);
-        const staticMatch = beforeArg.match(/static\s*$/);
+        const staticMatch = /static\s*$/.exec(beforeArg);
         if (staticMatch) {
             position = new vscode.Position(
                 position.line,
@@ -348,7 +348,11 @@ function extractFunctionDeclarationInfo(
     let canHaveReturnType = true;
     if (node.kind === 'method' && node.name && typeof node.name === 'object' && node.name.name) {
         const methodName = node.name.name.toLowerCase();
-        if (methodName === '__construct' || methodName === '__destruct' || methodName === '__clone') {
+        if (
+            methodName === '__construct' ||
+            methodName === '__destruct' ||
+            methodName === '__clone'
+        ) {
             canHaveReturnType = false;
         }
     }
@@ -392,7 +396,7 @@ function findClosureVariableName(
     const startLine = node.loc.start.line - 1;
     const lineText = document.lineAt(startLine).text;
 
-    const match = lineText.match(/(\$\w+)\s*=\s*(function|fn)\b/);
+    const match = /(\$\w+)\s*=\s*(function|fn)\b/.exec(lineText);
     if (match) {
         const varStart = lineText.indexOf(match[1]);
         if (varStart !== -1) {

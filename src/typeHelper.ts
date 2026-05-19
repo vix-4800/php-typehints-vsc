@@ -1,4 +1,4 @@
-import { Function, Method } from 'php-parser';
+import type { Function, Method } from 'php-parser';
 import * as vscode from 'vscode';
 
 /**
@@ -134,8 +134,8 @@ function normalizePhpReturnType(type: string): string {
     }
 
     if (hasTopLevelUnion(type)) {
-        const parts = splitTopLevelUnion(type).map(part => normalizeSingleType(part.trim()));
-        const uniqueParts = [...new Set(parts.filter(p => p))];
+        const parts = splitTopLevelUnion(type).map((part) => normalizeSingleType(part.trim()));
+        const uniqueParts = [...new Set(parts.filter((p) => p))];
         return uniqueParts.join('|');
     }
 
@@ -201,7 +201,7 @@ function normalizeSingleType(type: string): string {
         return 'static';
     }
 
-    if (type.match(/\[\]$/)) {
+    if (/\[\]$/.exec(type)) {
         return 'array';
     }
 
@@ -209,36 +209,36 @@ function normalizeSingleType(type: string): string {
         return 'array';
     }
 
-    if (type.match(/^list<.+>$/i)) {
+    if (/^list<.+>$/i.exec(type)) {
         return 'array';
     }
 
-    if (type.match(/^non-empty-array/i)) {
+    if (/^non-empty-array/i.exec(type)) {
         return 'array';
     }
 
-    if (type.match(/^array\{.+\}$/i)) {
+    if (/^array\{.+\}$/i.exec(type)) {
         return 'array';
     }
 
-    if (type.match(/^(callable|Closure)\(.+\)/i)) {
-        const callableMatch = type.match(/^(callable|Closure)/i);
+    if (/^(callable|Closure)\(.+\)/i.exec(type)) {
+        const callableMatch = /^(callable|Closure)/i.exec(type);
         return callableMatch ? callableMatch[1] : type;
     }
 
-    if (type.match(/^(positive|negative|non-positive|non-negative)-int$/i)) {
+    if (/^(positive|negative|non-positive|non-negative)-int$/i.exec(type)) {
         return 'int';
     }
 
-    if (type.match(/^(non-empty|literal|class|callable|numeric|truthy|non-falsy)-string$/i)) {
+    if (/^(non-empty|literal|class|callable|numeric|truthy|non-falsy)-string$/i.exec(type)) {
         return 'string';
     }
 
-    if (type.match(/^class-string<.+>$/i)) {
+    if (/^class-string<.+>$/i.exec(type)) {
         return 'string';
     }
 
-    const genericMatch = type.match(/^([A-Za-z_][A-Za-z0-9_\\]*)<.+>$/);
+    const genericMatch = /^([A-Za-z_][A-Za-z0-9_\\]*)<.+>$/.exec(type);
     if (genericMatch) {
         return genericMatch[1];
     }
@@ -274,7 +274,12 @@ function inferReturnTypeFromAst(node: Function | Method): string | null {
             }
         }
 
-        if (n.kind === 'function' || n.kind === 'method' || n.kind === 'closure' || n.kind === 'arrowfunc') {
+        if (
+            n.kind === 'function' ||
+            n.kind === 'method' ||
+            n.kind === 'closure' ||
+            n.kind === 'arrowfunc'
+        ) {
             return;
         }
 
@@ -282,7 +287,7 @@ function inferReturnTypeFromAst(node: Function | Method): string | null {
             if (n.hasOwnProperty(key)) {
                 const value = n[key];
                 if (Array.isArray(value)) {
-                    value.forEach(item => collectReturnTypes(item));
+                    value.forEach((item) => collectReturnTypes(item));
                 } else if (typeof value === 'object' && value !== null) {
                     collectReturnTypes(value);
                 }
@@ -316,11 +321,13 @@ function inferReturnTypeFromAst(node: Function | Method): string | null {
     }
 
     if (types.length === 2 && types.includes('null')) {
-        const otherType = types.find(t => t !== 'null');
+        const otherType = types.find((t) => t !== 'null');
         return otherType ? `${otherType}|null` : null;
     }
 
-    if (types.every(t => ['int', 'float', 'string', 'bool', 'array', 'null', 'void'].includes(t))) {
+    if (
+        types.every((t) => ['int', 'float', 'string', 'bool', 'array', 'null', 'void'].includes(t))
+    ) {
         return types.join('|');
     }
 
@@ -360,7 +367,7 @@ function inferExpressionType(expr: any): string | null {
             return 'null';
 
         case 'new':
-            if (expr.what && expr.what.name) {
+            if (expr.what?.name) {
                 if (typeof expr.what.name === 'string') {
                     return expr.what.name;
                 }
@@ -374,13 +381,25 @@ function inferExpressionType(expr: any): string | null {
             return null;
 
         case 'bin':
-            if ([
-                '>', '<', '>=', '<=',
-                '==', '===', '!=', '!==',
-                '<>',
-                '&&', '||', 'and', 'or', 'xor',
-                'instanceof'
-            ].includes(expr.type)) {
+            if (
+                [
+                    '>',
+                    '<',
+                    '>=',
+                    '<=',
+                    '==',
+                    '===',
+                    '!=',
+                    '!==',
+                    '<>',
+                    '&&',
+                    '||',
+                    'and',
+                    'or',
+                    'xor',
+                    'instanceof',
+                ].includes(expr.type)
+            ) {
                 return 'bool';
             }
 

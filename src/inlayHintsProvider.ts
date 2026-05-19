@@ -93,11 +93,13 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                 labelPart.command = {
                     title: 'Insert Named Parameter',
                     command: 'phpTypeHints.insertNamedParameter',
-                    arguments: [{
-                        uri: document.uri.toString(),
-                        position: arg.position,
-                        paramName: paramName
-                    }]
+                    arguments: [
+                        {
+                            uri: document.uri.toString(),
+                            position: arg.position,
+                            paramName: paramName,
+                        },
+                    ],
                 };
 
                 const hint = new vscode.InlayHint(
@@ -131,7 +133,11 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
                 continue;
             }
 
-            const returnType = await getReturnTypeAtPosition(document, decl.namePosition, decl.astNode);
+            const returnType = await getReturnTypeAtPosition(
+                document,
+                decl.namePosition,
+                decl.astNode
+            );
             if (!returnType) {
                 continue;
             }
@@ -141,11 +147,13 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
             labelPart.command = {
                 title: 'Insert Return Type',
                 command: 'phpTypeHints.insertReturnType',
-                arguments: [{
-                    uri: document.uri.toString(),
-                    position: decl.position,
-                    returnType: returnType
-                }]
+                arguments: [
+                    {
+                        uri: document.uri.toString(),
+                        position: decl.position,
+                        returnType: returnType,
+                    },
+                ],
             };
 
             const hint = new vscode.InlayHint(
@@ -162,7 +170,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
     }
 
     private extractParameterName(
-        label: string | vscode.ParameterInformation['label'],
+        label: vscode.ParameterInformation['label'] | string,
         signatureLabel: string
     ): string | null {
         let labelStr: string;
@@ -174,7 +182,7 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
             labelStr = String(label);
         }
 
-        const match = labelStr.match(/\$(\w+)/);
+        const match = /\$(\w+)/.exec(labelStr);
         return match ? match[1] : null;
     }
 
@@ -186,8 +194,8 @@ export class PhpInlayHintsProvider implements vscode.InlayHintsProvider {
         const hideWhenMatches = config.get<boolean>('hideWhenArgumentMatchesName', true);
 
         if (hideWhenMatches) {
-            const argVarMatch = arg.text.trim().match(/^\$(\w+)$/);
-            if (argVarMatch && argVarMatch[1] === paramName) {
+            const argVarMatch = /^\$(\w+)$/.exec(arg.text.trim());
+            if (argVarMatch?.[1] === paramName) {
                 return true;
             }
         }

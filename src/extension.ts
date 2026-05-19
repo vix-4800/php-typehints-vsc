@@ -32,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
             const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(args.uri));
             const editor = await vscode.window.showTextDocument(document);
 
-            await editor.edit(editBuilder => {
+            await editor.edit((editBuilder) => {
                 editBuilder.insert(args.position, `${args.paramName}: `);
             });
         }
@@ -44,7 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
             const document = await vscode.workspace.openTextDocument(vscode.Uri.parse(args.uri));
             const editor = await vscode.window.showTextDocument(document);
 
-            await editor.edit(editBuilder => {
+            await editor.edit((editBuilder) => {
                 editBuilder.insert(args.position, `: ${args.returnType}`);
             });
         }
