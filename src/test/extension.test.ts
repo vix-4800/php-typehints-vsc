@@ -9,11 +9,14 @@ suite('PHP Parameter Hints Test Suite', () => {
     test('Extension should activate', async () => {
         const ext = vscode.extensions.getExtension('vix.php-typehints-vsc');
         assert.ok(ext);
+        if (!ext) {
+            throw new Error('Extension not found');
+        }
         await ext.activate();
         assert.strictEqual(ext.isActive, true);
     });
 
-    test('Should provide inlay hints for simple function call', async function () {
+    test('Should provide inlay hints for simple function call', async function (this: Mocha.Context) {
         this.timeout(10000);
 
         const content = `<?php
@@ -44,7 +47,7 @@ greet("John", "Hi");
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });
 
-    test('Should not provide hints for named arguments', async function () {
+    test('Should not provide hints for named arguments', async function (this: Mocha.Context) {
         this.timeout(10000);
 
         const content = `<?php
@@ -74,7 +77,7 @@ greet(name: "John", greeting: "Hi");
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });
 
-    test('Should handle union types', async function () {
+    test('Should handle union types', async function (this: Mocha.Context) {
         this.timeout(10000);
 
         const content = `<?php
@@ -105,7 +108,7 @@ process("test");
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });
 
-    test('Should handle nested function calls', async function () {
+    test('Should handle nested function calls', async function (this: Mocha.Context) {
         this.timeout(10000);
 
         const content = `<?php
@@ -131,7 +134,7 @@ $length = strlen(trim($value));
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });
 
-    test('Should handle constructor calls', async function () {
+    test('Should handle constructor calls', async function (this: Mocha.Context) {
         this.timeout(10000);
 
         const content = `<?php
@@ -161,7 +164,7 @@ $user = new User("Alice", 30);
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });
 
-    test('Should handle variadic parameters', async function () {
+    test('Should handle variadic parameters', async function (this: Mocha.Context) {
         this.timeout(10000);
 
         const content = `<?php
@@ -191,7 +194,7 @@ sum(1, 2, 3, 4, 5);
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });
 
-    test('Should handle arrow functions as arguments', async function () {
+    test('Should handle arrow functions as arguments', async function (this: Mocha.Context) {
         this.timeout(10000);
 
         const content = `<?php
