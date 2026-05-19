@@ -12,9 +12,26 @@ suite('Parser Test Suite', () => {
 
     function createMockDocument(content: string): vscode.TextDocument {
         const uniqueId = `test-${++docCounter}.php`;
+        const lines = content.split('\n');
+
+        function offsetAt(position: vscode.Position): number {
+            let offset = 0;
+            for (let i = 0; i < position.line; i++) {
+                offset += (lines[i] || '').length + 1;
+            }
+
+            return offset + position.character;
+        }
+
         return {
-            getText: () => content,
-            lineCount: content.split('\n').length,
+            getText: (range?: vscode.Range) => {
+                if (!range) {
+                    return content;
+                }
+
+                return content.slice(offsetAt(range.start), offsetAt(range.end));
+            },
+            lineCount: lines.length,
             uri: vscode.Uri.parse(`untitled:${uniqueId}`),
             fileName: uniqueId,
             languageId: 'php',
@@ -25,7 +42,6 @@ suite('Parser Test Suite', () => {
             eol: vscode.EndOfLine.LF,
             encoding: 'utf-8',
             lineAt: (line: number) => {
-                const lines = content.split('\n');
                 const text = lines[line] || '';
                 return {
                     lineNumber: line,
@@ -36,17 +52,8 @@ suite('Parser Test Suite', () => {
                     isEmptyOrWhitespace: text.trim().length === 0,
                 };
             },
-            offsetAt: (position: vscode.Position) => {
-                const lines = content.split('\n');
-                let offset = 0;
-                for (let i = 0; i < position.line; i++) {
-                    offset += lines[i].length + 1;
-                }
-                offset += position.character;
-                return offset;
-            },
+            offsetAt,
             positionAt: (offset: number) => {
-                const lines = content.split('\n');
                 let currentOffset = 0;
                 for (let i = 0; i < lines.length; i++) {
                     if (currentOffset + lines[i].length >= offset) {
@@ -348,6 +355,27 @@ assert($sender instanceof Book && $sender instanceof CustomUserEmployeeTrait);`;
                 calls[0].arguments[0].position.character,
                 7,
                 `Argument position should be at start of $sender (column 7), got ${calls[0].arguments[0].position.character}`
+            );
+        });
+
+        test('Argument position for property lookup followed by ::class should be at start of expression', () => {
+            const content = `<?php
+$explodedArray = explode('\\\\', $this->someClass::class);`;
+            const doc = createMockDocument(content);
+            const range = new vscode.Range(0, 0, doc.lineCount, 0);
+            const calls = parseFunctionCalls(doc, range);
+
+            assert.strictEqual(calls.length, 1, 'Should find one explode call');
+            assert.strictEqual(calls[0].arguments.length, 2, 'Should find two arguments');
+            assert.strictEqual(
+                calls[0].arguments[1].text,
+                '$this->someClass::class',
+                'Second argument text should preserve the full expression'
+            );
+            assert.strictEqual(
+                calls[0].arguments[1].position.character,
+                31,
+                `Second argument position should be at start of $this (column 31), got ${calls[0].arguments[1].position.character}`
             );
         });
     });

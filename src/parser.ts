@@ -208,7 +208,8 @@ function findExpressionStartNode(node: any): any {
         if (
             (current.kind === 'nullsafepropertylookup' ||
                 current.kind === 'propertylookup' ||
-                current.kind === 'call') &&
+                current.kind === 'call' ||
+                current.kind === 'staticlookup') &&
             current.what?.loc
         ) {
             current = current.what;
@@ -252,8 +253,8 @@ function extractArgumentInfo(arg: any, document: vscode.TextDocument): ArgumentI
     }
 
     const argRange = new vscode.Range(
-        new vscode.Position(arg.loc.start.line - 1, arg.loc.start.column),
-        new vscode.Position(arg.loc.end.line - 1, arg.loc.end.column)
+        position,
+        new vscode.Position(actualArg.loc.end.line - 1, actualArg.loc.end.column)
     );
     const text = document.getText(argRange);
 
