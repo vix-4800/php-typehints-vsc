@@ -20,7 +20,7 @@
     "url": "https://github.com/vix-4800"
   },
   "engines": {
-    "vscode": "^1.110.0"
+    "vscode": "^1.120.0"
   },
   "categories": [
     "Programming Languages"
@@ -95,17 +95,17 @@
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
-    "@types/node": "^25.5.0",
-    "@types/vscode": "^1.110.0",
+    "@types/node": "^25.9.0",
+    "@types/vscode": "^1.120.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.7.1",
-    "eslint": "^10.1.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.2"
+    "@vscode/vsce": "^3.9.1",
+    "eslint": "^10.4.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.4"
   },
   "dependencies": {
-    "php-parser": "^3.5.0"
+    "php-parser": "^3.6.0"
   },
   "extensionDependencies": [
     "bmewburn.vscode-intelephense-client"
