@@ -72,7 +72,13 @@ npm test
 ### Create VSIX Package
 
 ```bash
-npm run package
+npm run package:vsix
+```
+
+### Create Pre-release VSIX Package
+
+```bash
+npm run package:prerelease
 ```
 
 ## License
