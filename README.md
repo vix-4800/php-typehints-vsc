@@ -1,5 +1,10 @@
 # PHP Type Hints
 
+[![Version](https://vsmarketplacebadges.dev/version/vix.php-typehints-vsc.svg)](https://marketplace.visualstudio.com/items?itemName=vix.php-typehints-vsc)
+[![Installs](https://vsmarketplacebadges.dev/installs-short/vix.php-typehints-vsc.svg)](https://marketplace.visualstudio.com/items?itemName=vix.php-typehints-vsc)
+[![Rating](https://vsmarketplacebadges.dev/rating-short/vix.php-typehints-vsc.svg)](https://marketplace.visualstudio.com/items?itemName=vix.php-typehints-vsc)
+![License](https://img.shields.io/github/license/vix-4800/php-import-helper)
+
 Display parameter names and return types as inlay hints for PHP.
 
 ## Features
